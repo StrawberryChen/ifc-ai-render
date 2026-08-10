@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+outputs/
+comfy_workflows/
+.cache/
+models/
+*.safetensors
+*.ckpt
+*.blend
+*.blend1
+*.exr
