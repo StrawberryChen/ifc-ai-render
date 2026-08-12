@@ -1,0 +1,2 @@
+fal-client>=0.7,<1
+Pillow>=10,<13

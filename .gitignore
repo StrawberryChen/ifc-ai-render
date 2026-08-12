@@ -12,3 +12,4 @@ models/
 *.blend
 *.blend1
 *.exr
+.env

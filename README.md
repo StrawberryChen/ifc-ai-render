@@ -58,6 +58,29 @@ python inference/run_depth_experiment.py \
   --prompt test --validate-only --width 768 --height 768
 ```
 
+## 3. fal.ai FLUX Depth API（MVP推荐）
+
+该路线不下载模型权重，也不需要本地GPU。在 [fal.ai](https://fal.ai/models/fal-ai/flux-control-lora-depth/api) 创建 API Key，然后在终端临时设置（不要写入代码或提交到Git）：
+
+```bash
+export FAL_KEY="your-key"
+.venv/bin/pip install -r requirements-api.txt
+.venv/bin/python inference/generate_flux_depth_api.py \
+  --depth data/examples/Building-Architecture.depth.png \
+  --prompt "photorealistic contemporary public architecture, preserve the exact massing, roofline and camera perspective from the depth map, warm white stone facade, dark metal window frames, low-reflection glazing, professional architectural visualization, soft daylight" \
+  --output outputs/fal_flux_depth/daylight.png
+```
+
+本地只验证深度预处理和请求参数，不消耗API额度：
+
+```bash
+.venv/bin/python inference/generate_flux_depth_api.py \
+  --depth data/examples/Building-Architecture.depth.png \
+  --prompt test --validate-only
+```
+
+脚本会保存生成图、实际上传的8位深度控制图和JSON请求/响应记录。由于输入本身已是Blender深度图，请求固定使用 `preprocess_depth=false`。
+
 ## 当前边界
 
 - 这是“有结构约束的方案表达”，不是可直接施工的工程出图。
