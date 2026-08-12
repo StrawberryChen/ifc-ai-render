@@ -41,6 +41,15 @@ python inference/generate_qwen_depth.py \
   --output outputs/generated/building.png
 ```
 
+一次加载模型后批量生成三个基线方案：
+
+```bash
+python inference/run_depth_experiment.py \
+  --depth data/examples/Building-Architecture.depth.png \
+  --config configs/depth_baseline.json \
+  --output-dir outputs/depth_baseline
+```
+
 仅在本地检查深度图，不加载 GPU 模型：
 
 ```bash
