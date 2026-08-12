@@ -30,7 +30,7 @@ python3.11 -m venv .venv
 
 ## 2. Colab A100 生成效果图
 
-打开 `notebooks/qwen_depth_colab.ipynb`，选择 A100 GPU，按顺序运行。Notebook 会安装固定版本的 DiffSynth-Studio，并使用仓库内的示例深度图。首次运行需下载较大模型，建议把 Hugging Face 缓存挂载到 Google Drive。
+打开 `notebooks/qwen_depth_colab.ipynb`，选择 A100 GPU，按顺序运行。Notebook 会安装固定版本的 DiffSynth-Studio，并使用仓库内的示例深度图。Notebook 默认挂载 Google Drive，将 Hugging Face 和 ModelScope 的模型缓存持久化到 `MyDrive/ifc-ai-render-cache/`，避免 Colab 运行时释放后重新下载。首次仍需下载较大模型。
 
 也可在 GPU 环境命令行运行：
 
