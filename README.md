@@ -130,6 +130,21 @@ python3 scripts/build_sdcc_scene.py
   --validate-only
 ```
 
+## 两阶段完整场景生成
+
+当原始模型只有空白地面时，先使用反向建筑遮罩只生成建筑以外的铺装、道路与景观，再通过 Canny 低强度统一整张图：
+
+- Colab：`notebooks/sdxl_scene_two_stage_colab.ipynb`
+- 配置：`configs/sdxl_scene_two_stage.json`
+- 推理：`inference/generate_sdxl_scene_two_stage.py`
+- 场景模型：`diffusers/stable-diffusion-xl-1.0-inpainting-0.1`
+
+```bash
+.venv/bin/python inference/generate_sdxl_scene_two_stage.py \
+  --config configs/sdxl_scene_two_stage.json \
+  --validate-only
+```
+
 ## 当前边界
 
 - 这是“有结构约束的方案表达”，不是可直接施工的工程出图。

@@ -162,6 +162,15 @@ notebooks/sdxl_canny_img2img_colab.ipynb
 
 把“允许 AI 修改哪些区域”变成确定规则。例如建筑主体低强度增强，天空和远景允许更高强度生成。
 
+### 空场地的两阶段生成
+
+如果基础模型只有建筑和空白地面，整图 Img2Img 不会可靠地从无到有布置环境。仓库中的 `sdxl_scene_two_stage.json` 因而采用：
+
+1. 将建筑遮罩反相，白色环境区域交给 SDXL Inpainting 生成铺装、道路、绿化和天空；建筑区域保持黑色并适当膨胀保护。
+2. 释放 Inpainting 模型显存，再加载 SDXL Base 与 Canny ControlNet，对完整画面进行 `0.30/0.40` 两档低强度统一润色。
+
+第一阶段结果保存在 `stage1.environment.png`，第二阶段结果位于 `stage2_refined/`。`input.environment_mask.png` 用于检查白色是否只覆盖允许生成的场地。
+
 ## 6. 数据与训练的关系
 
 第一版不训练。SDXL 已经学习过通用材质、光照和建筑摄影先验，我们先测量预训练能力上限。

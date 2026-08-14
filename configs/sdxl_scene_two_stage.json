@@ -1,0 +1,44 @@
+{
+  "experiment_name": "sdcc_sdxl_scene_two_stage",
+  "input": {
+    "image": "outputs/sdcc/sdcc.material.png",
+    "building_mask": "outputs/sdcc/sdcc.building_mask.png",
+    "mask_white_is_protected": true,
+    "mask_dilation": 10,
+    "mask_blur": 4,
+    "width": 1024,
+    "height": 768,
+    "resize_mode": "cover"
+  },
+  "inpaint": {
+    "model_id": "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
+    "variant": "fp16",
+    "dtype": "float16",
+    "seed": 42,
+    "strength": 0.99,
+    "num_inference_steps": 30,
+    "guidance_scale": 7.0,
+    "prompt": "professional aerial architectural visualization of a large steel-and-glass exhibition pavilion in a fully designed contemporary urban public plaza, preserve the existing central building, detailed light gray concrete and stone paving with expansion joints, pedestrian paths, access road and curb, restrained rows of deciduous trees, low planting beds and ornamental grasses around the plaza perimeter, a few small scale people, clear blue daytime sky, warm neutral daylight, realistic global illumination, coherent long soft shadows, premium client presentation rendering, photorealistic, highly detailed",
+    "negative_prompt": "chair, furniture, product photography, new building covering the existing building, dense forest, jungle, excessive trees obscuring architecture, fantasy landscape, water, snow, night, sunset, text, letters, logo, watermark, cartoon, illustration, blurry, low quality"
+  },
+  "refinement": {
+    "config": "configs/sdxl_canny_img2img.json",
+    "overrides": {
+      "strengths": [0.3, 0.4],
+      "num_inference_steps": 40,
+      "guidance_scale": 5.0,
+      "conditioning_scale": 0.65,
+      "guidance_start": 0.0,
+      "guidance_end": 0.75,
+      "prompt": "professional photorealistic aerial architectural visualization, preserve the complete building and newly designed plaza layout, unify physically based steel, glass, concrete paving, planting and sky, realistic reflections, global illumination, coherent daylight and soft shadows, balanced exposure, high-end client presentation rendering, highly detailed",
+      "negative_prompt": "chair, furniture, changed building geometry, missing structural bays, additional building, distorted beams, changed camera, changed composition, dense forest, text, logo, watermark, cartoon, blurry, low quality"
+    }
+  },
+  "runtime": {
+    "device": "cuda",
+    "enable_vae_slicing": true
+  },
+  "output": {
+    "directory": "/content/drive/MyDrive/ifc-ai-render/results/sdxl_scene_two_stage"
+  }
+}
