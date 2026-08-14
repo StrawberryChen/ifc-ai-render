@@ -176,6 +176,13 @@ python3 planning/scene_planner.py \
   --model deepseek-v4-flash
 ```
 
+本地浏览器问答界面：
+
+```bash
+.venv/bin/pip install -r requirements-planner.txt
+.venv/bin/streamlit run planning/scene_planner_app.py
+```
+
 ## 模型与运行时
 
 - [Qwen/Qwen-Image](https://huggingface.co/Qwen/Qwen-Image)

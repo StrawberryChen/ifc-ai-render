@@ -180,8 +180,41 @@ def call_openai_compatible(
     timeout: int = 120,
     thinking: str | None = None,
 ) -> dict[str, Any]:
+    result = call_chat_completion(
+        endpoint=endpoint,
+        api_key=api_key,
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        timeout=timeout,
+        thinking=thinking,
+        json_output=True,
+    )
+    content = result.strip()
+    if content.startswith("```"):
+        content = content.split("\n", 1)[1].rsplit("```", 1)[0]
+    return json.loads(content)
+
+
+def call_chat_completion(
+    endpoint: str,
+    api_key: str,
+    model: str,
+    messages: list[dict[str, str]],
+    timeout: int = 120,
+    thinking: str | None = None,
+    json_output: bool = False,
+) -> str:
     url = endpoint.rstrip("/") + "/chat/completions"
-    payload = json.dumps(build_chat_payload(model, prompt, thinking)).encode("utf-8")
+    payload_data: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.2,
+    }
+    if thinking:
+        payload_data["thinking"] = {"type": thinking}
+    if json_output:
+        payload_data["response_format"] = {"type": "json_object"}
+    payload = json.dumps(payload_data).encode("utf-8")
     request = urllib.request.Request(
         url,
         data=payload,
@@ -190,10 +223,7 @@ def call_openai_compatible(
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         result = json.loads(response.read().decode("utf-8"))
-    content = result["choices"][0]["message"]["content"].strip()
-    if content.startswith("```"):
-        content = content.split("\n", 1)[1].rsplit("```", 1)[0]
-    return json.loads(content)
+    return result["choices"][0]["message"]["content"].strip()
 
 
 def main() -> int:

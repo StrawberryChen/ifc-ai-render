@@ -70,6 +70,19 @@ python3 planning/scene_planner.py \
 
 内置 DeepSeek provider 自动使用 `https://api.deepseek.com/chat/completions`，无需手工设置 endpoint。`deepseek-v4-flash` 用于快速和低成本规划，`deepseek-v4-pro` 用于复杂场景和规划纠错。
 
+## 本地问答界面
+
+安装并启动：
+
+```bash
+.venv/bin/pip install -r requirements-planner.txt
+.venv/bin/streamlit run planning/scene_planner_app.py
+```
+
+浏览器会打开 `http://localhost:8501`。在侧栏输入 DeepSeek API Key，然后在聊天框中用自然语言描述需求。Agent 每轮最多追问一个关键问题；信息足够后点击“生成场景计划”。
+
+API Key 使用密码输入框，只存在当前 Streamlit 会话，不写入 JSON、代码或 Git。界面默认读取模拟校园清单和视觉需求，也支持上传其他 inventory/brief JSON。
+
 ## 后续接口
 
 Blender Executor 将按计划实现：
