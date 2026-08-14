@@ -26,6 +26,15 @@ def load_config(path: Path) -> dict[str, Any]:
             raise ValueError(f"input.{dimension} 必须不小于512且为8的倍数")
     if int(config["inference"]["num_inference_steps"]) < 1:
         raise ValueError("num_inference_steps 必须大于0")
+    controlnet = config.get("controlnet")
+    if controlnet and controlnet.get("enabled", True):
+        if not controlnet.get("model_id") or not controlnet.get("image"):
+            raise ValueError("启用 ControlNet 时必须提供 controlnet.model_id 和 controlnet.image")
+        scale = float(controlnet.get("conditioning_scale", 1.0))
+        start = float(controlnet.get("guidance_start", 0.0))
+        end = float(controlnet.get("guidance_end", 1.0))
+        if scale < 0 or not 0 <= start < end <= 1:
+            raise ValueError("ControlNet 参数必须满足 scale>=0 且 0<=guidance_start<guidance_end<=1")
     return config
 
 
@@ -57,9 +66,19 @@ def prepare_image(path: Path, width: int, height: int, resize_mode: str) -> Any:
     raise ValueError(f"不支持的 resize_mode: {resize_mode}")
 
 
+def prepare_control_image(path: Path, width: int, height: int, resize_mode: str) -> Any:
+    """Load a precomputed RGB control map and keep it pixel-aligned with the init image."""
+    return prepare_image(path, width, height, resize_mode)
+
+
 def build_pipeline(config: dict[str, Any], cache_dir: Path | None) -> Any:
     import torch
-    from diffusers import DPMSolverMultistepScheduler, StableDiffusionXLImg2ImgPipeline
+    from diffusers import (
+        ControlNetModel,
+        DPMSolverMultistepScheduler,
+        StableDiffusionXLControlNetImg2ImgPipeline,
+        StableDiffusionXLImg2ImgPipeline,
+    )
 
     dtype_name = config["model"].get("dtype", "float16")
     dtype = {"float16": torch.float16, "bfloat16": torch.bfloat16}[dtype_name]
@@ -71,7 +90,17 @@ def build_pipeline(config: dict[str, Any], cache_dir: Path | None) -> Any:
         kwargs["variant"] = config["model"]["variant"]
     if cache_dir:
         kwargs["cache_dir"] = str(cache_dir)
-    pipeline = StableDiffusionXLImg2ImgPipeline.from_pretrained(config["model"]["id"], **kwargs)
+    controlnet_config = config.get("controlnet")
+    if controlnet_config and controlnet_config.get("enabled", True):
+        controlnet_kwargs: dict[str, Any] = {"torch_dtype": dtype, "use_safetensors": True}
+        if cache_dir:
+            controlnet_kwargs["cache_dir"] = str(cache_dir)
+        controlnet = ControlNetModel.from_pretrained(controlnet_config["model_id"], **controlnet_kwargs)
+        pipeline = StableDiffusionXLControlNetImg2ImgPipeline.from_pretrained(
+            config["model"]["id"], controlnet=controlnet, **kwargs
+        )
+    else:
+        pipeline = StableDiffusionXLImg2ImgPipeline.from_pretrained(config["model"]["id"], **kwargs)
     if config["inference"].get("scheduler") == "dpmpp_2m_karras":
         pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
             pipeline.scheduler.config,
@@ -101,6 +130,19 @@ def run(config: dict[str, Any], repo_root: Path, cache_dir: Path | None, input_o
         int(config["input"]["height"]),
         config["input"].get("resize_mode", "cover"),
     )
+    controlnet_config = config.get("controlnet")
+    control_image = None
+    control_path = None
+    if controlnet_config and controlnet_config.get("enabled", True):
+        control_path = resolve_path(controlnet_config["image"], repo_root)
+        if not control_path.is_file():
+            raise FileNotFoundError(f"找不到 ControlNet 条件图: {control_path}")
+        control_image = prepare_control_image(
+            control_path,
+            int(config["input"]["width"]),
+            int(config["input"]["height"]),
+            config["input"].get("resize_mode", "cover"),
+        )
     pipeline = build_pipeline(config, cache_dir)
     seed = int(config["inference"]["seed"])
     steps = int(config["inference"]["num_inference_steps"])
@@ -109,14 +151,24 @@ def run(config: dict[str, Any], repo_root: Path, cache_dir: Path | None, input_o
     for strength_value in config["inference"]["strengths"]:
         strength = float(strength_value)
         generator = torch.Generator(device=config["runtime"].get("device", "cuda")).manual_seed(seed)
+        pipeline_args: dict[str, Any] = {
+            "prompt": config["prompt"],
+            "negative_prompt": config.get("negative_prompt", ""),
+            "image": image,
+            "strength": strength,
+            "num_inference_steps": steps,
+            "guidance_scale": float(config["inference"]["guidance_scale"]),
+            "generator": generator,
+        }
+        if control_image is not None:
+            pipeline_args.update({
+                "control_image": control_image,
+                "controlnet_conditioning_scale": float(controlnet_config.get("conditioning_scale", 1.0)),
+                "control_guidance_start": float(controlnet_config.get("guidance_start", 0.0)),
+                "control_guidance_end": float(controlnet_config.get("guidance_end", 1.0)),
+            })
         result = pipeline(
-            prompt=config["prompt"],
-            negative_prompt=config.get("negative_prompt", ""),
-            image=image,
-            strength=strength,
-            num_inference_steps=steps,
-            guidance_scale=float(config["inference"]["guidance_scale"]),
-            generator=generator,
+            **pipeline_args
         ).images[0]
         result_path = output_dir / f"sdcc.strength_{strength:.2f}.seed_{seed}.png"
         result.save(result_path)
@@ -130,11 +182,15 @@ def run(config: dict[str, Any], repo_root: Path, cache_dir: Path | None, input_o
         })
     if config["output"].get("save_input_copy", True):
         image.save(output_dir / "input.material.png")
+        if control_image is not None:
+            control_image.save(output_dir / "input.canny.png")
     if config["output"].get("save_metadata", True):
         metadata = {
             "created_at": datetime.now(timezone.utc).isoformat(),
             "model": config["model"],
             "input": str(input_path),
+            "controlnet": config.get("controlnet"),
+            "control_image": str(control_path) if control_path else None,
             "prompt": config["prompt"],
             "negative_prompt": config.get("negative_prompt", ""),
             "inference": config["inference"],
@@ -162,6 +218,7 @@ def main() -> int:
     print(json.dumps({
         "model": config["model"]["id"],
         "input": str(input_path),
+        "controlnet": config.get("controlnet"),
         "resolution": [config["input"]["width"], config["input"]["height"]],
         "strengths": config["inference"]["strengths"],
         "steps": config["inference"]["num_inference_steps"],
@@ -170,6 +227,11 @@ def main() -> int:
     if args.validate_only:
         if not input_path.is_file():
             raise FileNotFoundError(f"找不到输入图: {input_path}")
+        controlnet_config = config.get("controlnet")
+        if controlnet_config and controlnet_config.get("enabled", True):
+            control_path = resolve_path(controlnet_config["image"], repo_root)
+            if not control_path.is_file():
+                raise FileNotFoundError(f"找不到 ControlNet 条件图: {control_path}")
         return 0
     input_override = args.input.resolve() if args.input else None
     output_override = args.output_dir.resolve() if args.output_dir else None

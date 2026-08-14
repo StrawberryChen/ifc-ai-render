@@ -114,6 +114,22 @@ python3 scripts/build_sdcc_scene.py
   --validate-only
 ```
 
+## SDXL + Canny ControlNet
+
+在基础材质图之外输入像素对齐的边缘图，用预训练 Canny ControlNet 约束钢梁、屋面和玻璃轮廓，无需先训练：
+
+- Colab：`notebooks/sdxl_canny_img2img_colab.ipynb`
+- 配置：`configs/sdxl_canny_img2img.json`
+- ControlNet：`diffusers/controlnet-canny-sdxl-1.0`
+
+模型和 SDXL 共用 Drive 缓存 `MyDrive/ifc-ai-render-cache/huggingface`。第一次运行只会新增下载 ControlNet 权重。
+
+```bash
+.venv/bin/python inference/generate_sdxl_img2img.py \
+  --config configs/sdxl_canny_img2img.json \
+  --validate-only
+```
+
 ## 当前边界
 
 - 这是“有结构约束的方案表达”，不是可直接施工的工程出图。

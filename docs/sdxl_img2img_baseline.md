@@ -141,6 +141,15 @@ SDXL 的 UNet 接收：
 阶段E：高分辨率分块处理
 ```
 
+阶段B已经提供可运行配置与 Colab Notebook：
+
+```text
+configs/sdxl_canny_img2img.json
+notebooks/sdxl_canny_img2img_colab.ipynb
+```
+
+它使用预训练的 `diffusers/controlnet-canny-sdxl-1.0`，不需要训练数据。基础材质图传给 Img2Img，像素对齐的 `sdcc.edge.png` 作为 `control_image`。初始建议为 `conditioning_scale=0.8`、控制区间 `0.0–0.9`。
+
 ### Canny
 
 锁定可见边缘、杆件、门窗和分缝。它比 Depth 更适合保护细部，但不能表达前后距离。

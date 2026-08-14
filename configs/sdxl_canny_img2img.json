@@ -1,0 +1,42 @@
+{
+  "experiment_name": "sdcc_sdxl_canny_img2img",
+  "model": {
+    "id": "stabilityai/stable-diffusion-xl-base-1.0",
+    "variant": "fp16",
+    "dtype": "float16",
+    "use_safetensors": true
+  },
+  "controlnet": {
+    "enabled": true,
+    "model_id": "diffusers/controlnet-canny-sdxl-1.0",
+    "image": "outputs/sdcc/sdcc.edge.png",
+    "conditioning_scale": 0.8,
+    "guidance_start": 0.0,
+    "guidance_end": 0.9
+  },
+  "input": {
+    "image": "outputs/sdcc/sdcc.material.png",
+    "width": 1024,
+    "height": 768,
+    "resize_mode": "cover"
+  },
+  "prompt": "a large permanent modern steel-and-glass exhibition pavilion, professional photorealistic architectural visualization, preserve the exact existing building geometry, repeated triangular steel roof trusses, arched glazed enclosure, exact number and position of structural bays, fixed camera angle and composition, physically based dark steel, transparent architectural glass, realistic light gray concrete plaza, subtle natural reflections, global illumination, accurate soft daylight shadows, high-end client presentation rendering, highly detailed",
+  "negative_prompt": "chair, chairs, furniture, product design, small object, sculpture, changed geometry, redesigned building, additional structure, missing structure, distorted beams, curved structural members, changed camera angle, changed composition, fantasy architecture, excessive vegetation, people, cars, text, logo, watermark, blurry, low quality",
+  "inference": {
+    "seed": 42,
+    "num_inference_steps": 40,
+    "guidance_scale": 5.5,
+    "scheduler": "dpmpp_2m_karras",
+    "strengths": [0.35, 0.45, 0.55]
+  },
+  "runtime": {
+    "device": "cuda",
+    "enable_vae_slicing": true,
+    "enable_model_cpu_offload": false
+  },
+  "output": {
+    "directory": "/content/drive/MyDrive/ifc-ai-render/results/sdxl_canny",
+    "save_input_copy": true,
+    "save_metadata": true
+  }
+}
