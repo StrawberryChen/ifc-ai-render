@@ -1,0 +1,34 @@
+{
+  "experiment_name": "sdcc_sdxl_img2img_baseline",
+  "model": {
+    "id": "stabilityai/stable-diffusion-xl-base-1.0",
+    "variant": "fp16",
+    "dtype": "float16",
+    "use_safetensors": true
+  },
+  "input": {
+    "image": "outputs/sdcc/sdcc.material.png",
+    "width": 1024,
+    "height": 768,
+    "resize_mode": "cover"
+  },
+  "prompt": "professional architectural visualization, preserve the exact existing building geometry, structural frame, camera angle and composition, physically based architectural materials, realistic dark metal structure, transparent glass enclosure, subtle natural reflections, global illumination, accurate soft shadows, balanced daylight, high-end client presentation rendering, photorealistic, highly detailed",
+  "negative_prompt": "changed geometry, redesigned building, additional structure, missing structure, distorted beams, curved structural members, changed camera angle, changed composition, fantasy architecture, excessive vegetation, people, cars, text, logo, watermark, blurry, low quality",
+  "inference": {
+    "seed": 42,
+    "num_inference_steps": 50,
+    "guidance_scale": 5.0,
+    "scheduler": "dpmpp_2m_karras",
+    "strengths": [0.15, 0.25, 0.35]
+  },
+  "runtime": {
+    "device": "cuda",
+    "enable_vae_slicing": true,
+    "enable_model_cpu_offload": false
+  },
+  "output": {
+    "directory": "/content/drive/MyDrive/ifc-ai-render-results/sdxl_rgb_baseline",
+    "save_input_copy": true,
+    "save_metadata": true
+  }
+}

@@ -81,6 +81,39 @@ export FAL_KEY="your-key"
 
 脚本会保存生成图、实际上传的8位深度控制图和JSON请求/响应记录。由于输入本身已是Blender深度图，请求固定使用 `preprocess_depth=false`。
 
+## SDCC 有材质建筑样例
+
+`data/sdcc` 是公共领域的 San Diego Convention Center 风格 OBJ 样例。直接生成彼此像素对齐的基础材质图、连续深度图、边缘图和建筑遮罩：
+
+```bash
+python3 scripts/build_sdcc_scene.py
+```
+
+输出位于 `outputs/sdcc/`：
+
+- `sdcc.material.png`：SDXL Img2Img 主输入
+- `sdcc.depth.png`：16位连续深度，近处为白色
+- `sdcc.edge.png`：门窗和构件边缘条件
+- `sdcc.building_mask.png`：保护主体建筑的遮罩
+- `sdcc.scene.blend`：可继续调整相机、材质和灯光的 Blender 场景
+
+## SDXL Img2Img 材质增强基线
+
+第一轮只使用基础材质 RGB 与提示词，对比 `strength=0.15/0.25/0.35`：
+
+- Colab：`notebooks/sdxl_img2img_baseline_colab.ipynb`
+- 配置：`configs/sdxl_img2img_baseline.json`
+- 推理：`inference/generate_sdxl_img2img.py`
+- 原理说明：`docs/sdxl_img2img_baseline.md`
+
+只校验配置和输入，不加载模型：
+
+```bash
+.venv/bin/python inference/generate_sdxl_img2img.py \
+  --config configs/sdxl_img2img_baseline.json \
+  --validate-only
+```
+
 ## 当前边界
 
 - 这是“有结构约束的方案表达”，不是可直接施工的工程出图。
