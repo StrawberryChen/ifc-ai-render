@@ -164,6 +164,37 @@ python3 planning/scene_planner.py \
 
 详细数据合同与兼容 Qwen API 的用法见 `docs/scene_planner.md`。
 
+## 通用项目语义映射
+
+新项目不需要重新编写 Executor。先从 Blender/未来SKP解析器导出原始对象清单，再映射为标准语义和项目 manifest：
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender \
+  -b outputs/sdcc/sdcc.scene.blend \
+  --python blender/export_scene_inventory.py -- \
+  --project-id sdcc_demo \
+  --output outputs/manifests/sdcc.raw.json
+
+python3 semantic/semantic_mapper.py \
+  --input outputs/manifests/sdcc.raw.json \
+  --overrides data/examples/sdcc_mapping_overrides.json \
+  --output outputs/manifests/sdcc.project_manifest.json
+```
+
+详见 `docs/semantic_mapping.md`。
+
+经过确认的 manifest 和 Planner计划可以交给 Blender Executor：
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender \
+  -b outputs/sdcc/sdcc.scene.blend \
+  --python blender/scene_executor.py -- \
+  --manifest outputs/manifests/sdcc.project_manifest.json \
+  --plan outputs/planning/sdcc.scene_plan.json \
+  --output-blend outputs/executor/sdcc.planned.blend \
+  --report outputs/executor/sdcc.execution_report.json
+```
+
 DeepSeek V4快速规划：
 
 ```bash

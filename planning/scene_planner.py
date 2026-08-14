@@ -30,7 +30,7 @@ def validate_inventory(inventory: dict[str, Any]) -> None:
         raise ValueError("inventory.objects 必须是非空数组")
     valid_types = {
         "building", "sports_field", "court", "road", "pedestrian", "green_area",
-        "boundary", "context_building", "water", "unknown",
+        "boundary", "context_building", "water", "parking", "entrance", "unknown",
     }
     ids: set[str] = set()
     for item in objects:

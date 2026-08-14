@@ -1,0 +1,7 @@
+{
+  "project_id": "sdcc_demo",
+  "object_mapping": {
+    "SDCC_Building": "building",
+    "SDCC_Ground": "pedestrian"
+  }
+}

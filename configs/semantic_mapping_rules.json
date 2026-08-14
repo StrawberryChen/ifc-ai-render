@@ -1,0 +1,16 @@
+{
+  "auto_accept_threshold": 0.6,
+  "keywords": {
+    "building": ["building", "architecture", "教学楼", "综合楼", "实验楼", "宿舍", "食堂", "连廊", "建筑"],
+    "sports_field": ["sports field", "football", "soccer", "track", "操场", "足球场", "跑道", "运动场"],
+    "court": ["court", "basketball", "volleyball", "tennis", "篮球场", "排球场", "网球场"],
+    "road": ["road", "street", "asphalt", "driveway", "车行道", "道路", "机动车道", "沥青"],
+    "pedestrian": ["plaza", "paving", "walkway", "sidewalk", "ground", "广场", "铺装", "人行道", "步行", "地面"],
+    "green_area": ["green", "grass", "lawn", "landscape", "planting", "绿地", "草坪", "景观", "种植"],
+    "boundary": ["boundary", "fence", "wall", "gate", "围墙", "围栏", "边界", "大门"],
+    "context_building": ["context", "surrounding", "neighbor", "mass", "周边", "城市体块", "背景建筑"],
+    "water": ["water", "pond", "lake", "水体", "水池", "湖"],
+    "parking": ["parking", "car park", "停车", "车位"],
+    "entrance": ["entrance", "entry", "main gate", "入口", "主入口"]
+  }
+}
