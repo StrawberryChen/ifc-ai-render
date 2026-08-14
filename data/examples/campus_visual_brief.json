@@ -1,0 +1,22 @@
+{
+  "goal": "生成达到专业效果图公司交付水平的重点高中校园鸟瞰效果图",
+  "visual_target": {
+    "time_of_day": "blue_hour",
+    "mood": "calm premium institutional architecture",
+    "composition": "high oblique aerial overview",
+    "lighting": "cool ambient sky with warm windows and street lights"
+  },
+  "landscape": {
+    "preset": "northeast_china_campus",
+    "tree_density": 0.32,
+    "priority": "丰富环境但不遮挡主体建筑、入口和运动场"
+  },
+  "reference": {
+    "description": "黄昏校园鸟瞰，蓝紫环境光、暖色亮窗、道路灯光、层次丰富但克制的乔木，主体建筑和运动场清晰"
+  },
+  "deliverables": {
+    "hero_aerial_views": 2,
+    "eye_level_views": 2,
+    "final_resolution": [4096, 3072]
+  }
+}

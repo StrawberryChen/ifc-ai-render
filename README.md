@@ -151,6 +151,19 @@ python3 scripts/build_sdcc_scene.py
 - 单视角扩散生成不会自动保证多视角材质完全一致。下一阶段应保存统一的材质规格、seed 和视角元数据，再评估多视图一致性方案。
 - 生产使用前需再核对模型权重许可证、客户数据合规与输出审核。
 
+## Scene Planner Agent
+
+在 SKP 解析完成前，可以先使用模拟校园清单开发场景规划。规划器输出 Blender 可执行的相机、灯光、材质、景观、人物车辆和渲染计划：
+
+```bash
+python3 planning/scene_planner.py \
+  --inventory data/examples/campus_scene_inventory.json \
+  --brief data/examples/campus_visual_brief.json \
+  --output outputs/planning/campus_scene_plan.json
+```
+
+详细数据合同与兼容 Qwen API 的用法见 `docs/scene_planner.md`。
+
 ## 模型与运行时
 
 - [Qwen/Qwen-Image](https://huggingface.co/Qwen/Qwen-Image)

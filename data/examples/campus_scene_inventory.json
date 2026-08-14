@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "source_mode": "placeholder_before_skp_parser",
+  "project": {
+    "name": "沈阳重点高中新建校区",
+    "location": "Shenyang, Liaoning, China",
+    "units": "meter",
+    "north_deg": null
+  },
+  "objects": [
+    {"id": "building_teaching", "type": "building", "name": "教学楼组团", "preserve_geometry": true},
+    {"id": "building_comprehensive", "type": "building", "name": "综合楼", "preserve_geometry": true},
+    {"id": "building_link", "type": "building", "name": "连廊", "preserve_geometry": true},
+    {"id": "sports_track", "type": "sports_field", "name": "400米跑道与足球场", "preserve_geometry": true},
+    {"id": "sports_courts", "type": "court", "name": "篮球场", "preserve_geometry": true},
+    {"id": "campus_roads", "type": "road", "name": "校园及城市道路", "preserve_geometry": true},
+    {"id": "pedestrian_network", "type": "pedestrian", "name": "入口广场和步行流线", "preserve_geometry": true},
+    {"id": "green_zones", "type": "green_area", "name": "设计绿地区域", "preserve_geometry": true},
+    {"id": "campus_boundary", "type": "boundary", "name": "围墙与场地边界", "preserve_geometry": true},
+    {"id": "context_massing", "type": "context_building", "name": "周边城市建筑体块", "preserve_geometry": true}
+  ]
+}
