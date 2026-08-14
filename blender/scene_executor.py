@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import random
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,9 @@ from typing import Any
 
 import bpy
 from mathutils import Vector
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from asset_library import AssetLibrary
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,6 +27,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-blend", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--preview", type=Path)
+    parser.add_argument("--asset-registry", type=Path, default=Path("assets/registry/asset_registry.json"))
+    parser.add_argument("--asset-preset", type=Path, default=Path("assets/presets/campus_northeast_china.json"))
+    parser.add_argument("--meters-per-unit", type=float)
     return parser.parse_args(values)
 
 
@@ -166,6 +173,192 @@ def configure_cameras(
     return reports
 
 
+def bbox(obj: bpy.types.Object) -> tuple[Vector, Vector]:
+    points = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+    return (
+        Vector((min(p.x for p in points), min(p.y for p in points), min(p.z for p in points))),
+        Vector((max(p.x for p in points), max(p.y for p in points), max(p.z for p in points))),
+    )
+
+
+def infer_meters_per_unit(manifest: dict[str, Any], object_map: dict[str, bpy.types.Object], override: float | None) -> tuple[float, str]:
+    if override:
+        if override <= 0:
+            raise ValueError("--meters-per-unit 必须大于0")
+        return override, "cli_override"
+    heights = []
+    for item in manifest["objects"]:
+        if item["type"] == "building" and item["id"] in object_map:
+            minimum, maximum = bbox(object_map[item["id"]])
+            if maximum.z - minimum.z > 0:
+                heights.append(maximum.z - minimum.z)
+    scene_info = manifest.get("scene", {})
+    scene_scale = float(scene_info.get("scale_length", 0))
+    if scene_info.get("unit_system") == "METRIC" and scene_scale > 0:
+        metric_heights = [height * scene_scale for height in heights]
+        if not metric_heights or all(3.0 <= height <= 200.0 for height in metric_heights):
+            return scene_scale, "blender_metric_scene"
+    if heights:
+        heights.sort()
+        median_height = heights[len(heights) // 2]
+        return 18.0 / median_height, "inferred_assuming_18m_building"
+    return 1.0, "fallback_one_meter_per_unit"
+
+
+def apply_semantic_materials(
+    manifest: dict[str, Any],
+    object_map: dict[str, bpy.types.Object],
+    preset: dict[str, Any],
+    library: AssetLibrary,
+) -> dict[str, Any]:
+    applied = []
+    skipped = []
+    mappings = preset.get("materials", {})
+    for item in manifest["objects"]:
+        asset_id = mappings.get(item["type"])
+        obj = object_map.get(item["id"])
+        if not asset_id or not obj or obj.type != "MESH":
+            skipped.append(item["id"])
+            continue
+        material = library.load_material(asset_id)
+        obj.data.materials.clear()
+        obj.data.materials.append(material)
+        obj["air_material_asset_id"] = asset_id
+        applied.append({"semantic_id": item["id"], "object": obj.name, "asset_id": asset_id})
+    return {"action": "material_assignments", "status": "executed", "applied": applied, "skipped": skipped}
+
+
+def inside_expanded_bbox(point: Vector, obj: bpy.types.Object, clearance_units: float) -> bool:
+    minimum, maximum = bbox(obj)
+    return (
+        minimum.x - clearance_units <= point.x <= maximum.x + clearance_units
+        and minimum.y - clearance_units <= point.y <= maximum.y + clearance_units
+    )
+
+
+def upward_triangles(obj: bpy.types.Object) -> list[tuple[Vector, Vector, Vector, float]]:
+    mesh = obj.data
+    matrix = obj.matrix_world
+    result = []
+    for polygon in mesh.polygons:
+        vertices = [matrix @ mesh.vertices[index].co for index in polygon.vertices]
+        if len(vertices) < 3:
+            continue
+        for index in range(1, len(vertices) - 1):
+            a, b, c = vertices[0], vertices[index], vertices[index + 1]
+            normal = (b - a).cross(c - a)
+            area = normal.length * 0.5
+            if area > 1e-8 and abs(normal.normalized().z) >= 0.7:
+                result.append((a, b, c, area))
+    return result
+
+
+def scatter_landscape(
+    manifest: dict[str, Any],
+    object_map: dict[str, bpy.types.Object],
+    plan: dict[str, Any],
+    preset: dict[str, Any],
+    library: AssetLibrary,
+    collection: bpy.types.Collection,
+    meters_per_unit: float,
+) -> dict[str, Any]:
+    config = preset.get("vegetation", {})
+    asset_pool = config.get("asset_pool", [])
+    green_objects = [object_map[item["id"]] for item in manifest["objects"] if item["type"] == "green_area" and item["id"] in object_map]
+    buildings = [object_map[item["id"]] for item in manifest["objects"] if item["type"] == "building" and item["id"] in object_map]
+    if not green_objects or not asset_pool:
+        return {"action": "landscape_scatter", "status": "skipped_no_semantic_targets", "instances": 0}
+    seed = int(plan.get("landscape_plan", {}).get("seed", 4201))
+    rng = random.Random(seed)
+    density = float(plan.get("landscape_plan", {}).get("tree_density", config.get("default_density", 0.32)))
+    spacing_m = float(plan.get("landscape_plan", {}).get("minimum_spacing_m", config.get("minimum_spacing_m", 6.0)))
+    clearance_m = float(plan.get("landscape_plan", {}).get("building_clearance_m", config.get("building_clearance_m", 5.0)))
+    spacing_units = spacing_m / meters_per_unit
+    clearance_units = clearance_m / meters_per_unit
+    placed: list[Vector] = []
+    instances = []
+    for green in green_objects:
+        triangles = upward_triangles(green)
+        total_area_units = sum(item[3] for item in triangles)
+        total_area_m = total_area_units * meters_per_unit * meters_per_unit
+        target_count = min(500, max(1, round(total_area_m / max(spacing_m * spacing_m, 1) * density)))
+        cumulative = []
+        running = 0.0
+        for triangle in triangles:
+            running += triangle[3]
+            cumulative.append(running)
+        attempts = 0
+        while len(instances) < target_count and attempts < target_count * 40 and cumulative:
+            attempts += 1
+            value = rng.random() * cumulative[-1]
+            triangle_index = next(i for i, end in enumerate(cumulative) if value <= end)
+            a, b, c, _ = triangles[triangle_index]
+            r1, r2 = math.sqrt(rng.random()), rng.random()
+            point = a * (1 - r1) + b * (r1 * (1 - r2)) + c * (r1 * r2)
+            if any((point.xy - existing.xy).length < spacing_units for existing in placed):
+                continue
+            if any(inside_expanded_bbox(point, building, clearance_units) for building in buildings):
+                continue
+            asset_id = rng.choice(asset_pool)
+            record = library.record(asset_id)
+            scale_min, scale_max = record.get("scale_range", [1.0, 1.0])
+            scale = rng.uniform(scale_min, scale_max) / meters_per_unit
+            instance = library.instantiate_collection(asset_id, f"AIR_Tree_{len(instances) + 1:04d}", tuple(point), scale)
+            instance.rotation_euler.z = rng.random() * math.tau
+            link_only(instance, collection)
+            placed.append(point)
+            instances.append({"object": instance.name, "asset_id": asset_id})
+    return {"action": "landscape_scatter", "status": "executed", "seed": seed, "instances": len(instances), "assets": instances}
+
+
+def perimeter_points(minimum: Vector, maximum: Vector, spacing: float) -> list[tuple[Vector, float]]:
+    points: list[tuple[Vector, float]] = []
+    edges = [
+        (Vector((minimum.x, minimum.y, maximum.z)), Vector((maximum.x, minimum.y, maximum.z)), 0.0),
+        (Vector((maximum.x, minimum.y, maximum.z)), Vector((maximum.x, maximum.y, maximum.z)), math.pi / 2),
+        (Vector((maximum.x, maximum.y, maximum.z)), Vector((minimum.x, maximum.y, maximum.z)), math.pi),
+        (Vector((minimum.x, maximum.y, maximum.z)), Vector((minimum.x, minimum.y, maximum.z)), -math.pi / 2),
+    ]
+    for start, end, rotation in edges:
+        length = (end - start).length
+        count = max(1, round(length / max(spacing, 1e-6)))
+        for index in range(count):
+            t = (index + 0.5) / count
+            points.append((start.lerp(end, t), rotation))
+    return points
+
+
+def place_streetlights(
+    manifest: dict[str, Any],
+    object_map: dict[str, bpy.types.Object],
+    plan: dict[str, Any],
+    preset: dict[str, Any],
+    library: AssetLibrary,
+    collection: bpy.types.Collection,
+    meters_per_unit: float,
+) -> dict[str, Any]:
+    light_plan = plan.get("lighting_plan", {}).get("street_lights", {})
+    if not light_plan.get("enabled", False):
+        return {"action": "streetlight_placement", "status": "skipped_disabled", "instances": 0}
+    config = preset.get("street_lighting", {})
+    asset_id = config.get("asset_id")
+    targets = [object_map[item["id"]] for item in manifest["objects"] if item["type"] in {"road", "pedestrian"} and item["id"] in object_map]
+    if not asset_id or not targets:
+        return {"action": "streetlight_placement", "status": "skipped_no_semantic_targets", "instances": 0}
+    spacing_m = float(light_plan.get("spacing_m", config.get("default_spacing_m", 22.0)))
+    spacing_units = spacing_m / meters_per_unit
+    scale = 1.0 / meters_per_unit
+    instances = []
+    for target in targets:
+        minimum, maximum = bbox(target)
+        for point, rotation in perimeter_points(minimum, maximum, spacing_units):
+            instance = library.instantiate_collection(asset_id, f"AIR_Streetlight_{len(instances) + 1:04d}", tuple(point), scale)
+            instance.rotation_euler.z = rotation
+            link_only(instance, collection)
+            instances.append(instance.name)
+    return {"action": "streetlight_placement", "status": "executed", "asset_id": asset_id, "instances": len(instances)}
+
+
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     source_blend = bpy.data.filepath
     manifest = read_json(args.manifest)
@@ -188,11 +381,16 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError(f"Blender中找不到manifest对象: {missing}")
 
     controls = ensure_collection("AIR_CONTROLS")
+    asset_instances = ensure_collection("AIR_ASSET_INSTANCES")
+    library = AssetLibrary(args.asset_registry)
+    preset = read_json(args.asset_preset)
+    meters_per_unit, scale_source = infer_meters_per_unit(manifest, object_map, args.meters_per_unit)
     actions = [configure_world(plan), configure_sun(plan, controls), configure_render(plan, args.preview)]
     actions.extend(configure_cameras(plan, list(object_map.values()), controls))
     actions.extend([
-        {"action": "material_assignments", "status": "planned_not_implemented", "reason": "asset preset library not connected"},
-        {"action": "landscape_scatter", "status": "planned_not_implemented", "reason": "vegetation asset library not connected"},
+        apply_semantic_materials(manifest, object_map, preset, library),
+        scatter_landscape(manifest, object_map, plan, preset, library, asset_instances, meters_per_unit),
+        place_streetlights(manifest, object_map, plan, preset, library, asset_instances, meters_per_unit),
         {"action": "entourage_scatter", "status": "planned_not_implemented", "reason": "people/vehicle asset library not connected"},
         {"action": "window_lighting", "status": "planned_not_implemented", "reason": "window material semantic mask unavailable"},
     ])
@@ -209,10 +407,14 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "plan": str(args.plan),
         "output_blend": str(args.output_blend),
         "bound_objects": {key: value.name for key, value in object_map.items()},
+        "unit_scale": {"meters_per_unit": meters_per_unit, "source": scale_source},
+        "asset_registry": str(args.asset_registry),
+        "asset_preset": str(args.asset_preset),
         "actions": actions,
         "summary": {
             "executed": sum(item["status"] == "executed" for item in actions),
             "not_implemented": sum(item["status"] == "planned_not_implemented" for item in actions),
+            "skipped": sum(item["status"].startswith("skipped") for item in actions),
         },
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)

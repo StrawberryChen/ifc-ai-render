@@ -209,6 +209,8 @@ python3 scripts/validate_asset_registry.py
 
 当前包含6种PBR材质、3种乔木和1种校园路灯，以及东北校园预设和许可证注册表。详见 `assets/README.md`。
 
+Executor已经接入该注册表：按 `road/pedestrian/green_area/sports_field` 自动应用材质，在绿地区域散布乔木并避让建筑，沿道路或广场边界按规划间距实例化路灯。源场景单位异常时会记录比例推断；正式项目可传入 `--meters-per-unit`。
+
 DeepSeek V4快速规划：
 
 ```bash

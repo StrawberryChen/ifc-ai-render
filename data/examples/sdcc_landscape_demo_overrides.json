@@ -1,0 +1,8 @@
+{
+  "project_id": "sdcc_landscape_demo",
+  "notes": "仅用于验证绿化散布：把SDCC示例整块地面临时视为green_area，不代表真实设计。",
+  "object_mapping": {
+    "SDCC_Building": "building",
+    "SDCC_Ground": "green_area"
+  }
+}

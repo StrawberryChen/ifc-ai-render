@@ -62,4 +62,12 @@ Executor只通过 manifest绑定Blender原始对象，绝不靠项目名称硬�
   --preview outputs/executor/sdcc.preview.png
 ```
 
-如果 manifest 仍有未确认对象或引用的 Blender对象不存在，Executor拒绝修改场景。材质资产、植被、人物车辆和亮窗尚未接入时会在报告中明确标记 `planned_not_implemented`。
+如果 manifest 仍有未确认对象或引用的 Blender对象不存在，Executor拒绝修改场景。人物车辆和亮窗尚未接入时会在报告中明确标记 `planned_not_implemented`。
+
+Executor默认读取 `assets/registry/asset_registry.json` 和 `assets/presets/campus_northeast_china.json`。它会按标准语义自动应用材质、在 `green_area` 表面散布树木，并沿 `road/pedestrian` 边界放置路灯。没有绿地区域时，树木步骤会明确标记为跳过。
+
+如果源场景没有米制单位，Executor会用建筑高度推断场景比例并写入报告。真实项目应优先显式传入：
+
+```text
+--meters-per-unit 1.0
+```
