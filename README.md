@@ -164,6 +164,18 @@ python3 planning/scene_planner.py \
 
 详细数据合同与兼容 Qwen API 的用法见 `docs/scene_planner.md`。
 
+DeepSeek V4快速规划：
+
+```bash
+export SCENE_PLANNER_API_KEY="sk-你的DeepSeek密钥"
+python3 planning/scene_planner.py \
+  --inventory data/examples/campus_scene_inventory.json \
+  --brief data/examples/campus_visual_brief.json \
+  --output outputs/planning/campus_scene_plan.deepseek.json \
+  --provider deepseek \
+  --model deepseek-v4-flash
+```
+
 ## 模型与运行时
 
 - [Qwen/Qwen-Image](https://huggingface.co/Qwen/Qwen-Image)

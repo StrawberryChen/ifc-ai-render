@@ -160,16 +160,28 @@ def planner_prompt(inventory: dict[str, Any], brief: dict[str, Any], template: d
     )
 
 
-def call_openai_compatible(
-    endpoint: str, api_key: str, model: str, prompt: str, timeout: int = 120
-) -> dict[str, Any]:
-    url = endpoint.rstrip("/") + "/chat/completions"
-    payload = json.dumps({
+def build_chat_payload(model: str, prompt: str, thinking: str | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
-    }).encode("utf-8")
+    }
+    if thinking:
+        payload["thinking"] = {"type": thinking}
+    return payload
+
+
+def call_openai_compatible(
+    endpoint: str,
+    api_key: str,
+    model: str,
+    prompt: str,
+    timeout: int = 120,
+    thinking: str | None = None,
+) -> dict[str, Any]:
+    url = endpoint.rstrip("/") + "/chat/completions"
+    payload = json.dumps(build_chat_payload(model, prompt, thinking)).encode("utf-8")
     request = urllib.request.Request(
         url,
         data=payload,
@@ -189,10 +201,11 @@ def main() -> int:
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--brief", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--provider", choices=["template", "openai-compatible"], default="template")
+    parser.add_argument("--provider", choices=["template", "deepseek", "openai-compatible"], default="template")
     parser.add_argument("--endpoint", default=os.environ.get("SCENE_PLANNER_ENDPOINT", ""))
     parser.add_argument("--model", default=os.environ.get("SCENE_PLANNER_MODEL", "qwen-plus"))
     parser.add_argument("--api-key-env", default="SCENE_PLANNER_API_KEY")
+    parser.add_argument("--thinking", choices=["enabled", "disabled"], default="disabled")
     args = parser.parse_args()
 
     inventory = load_json(args.inventory)
@@ -202,10 +215,20 @@ def main() -> int:
     if args.provider == "template":
         plan = template
     else:
+        if args.provider == "deepseek":
+            args.endpoint = "https://api.deepseek.com"
+            if args.model == "qwen-plus":
+                args.model = "deepseek-v4-flash"
         api_key = os.environ.get(args.api_key_env, "")
         if not args.endpoint or not api_key:
             raise ValueError(f"需要 --endpoint 和环境变量 {args.api_key_env}")
-        plan = call_openai_compatible(args.endpoint, api_key, args.model, planner_prompt(inventory, brief, template))
+        plan = call_openai_compatible(
+            args.endpoint,
+            api_key,
+            args.model,
+            planner_prompt(inventory, brief, template),
+            thinking=args.thinking if args.provider == "deepseek" else None,
+        )
     validate_plan(plan, inventory)
     plan["generated_at"] = datetime.now(timezone.utc).isoformat()
     plan["planner"] = {"provider": args.provider, "model": args.model if args.provider != "template" else "rules-v1"}

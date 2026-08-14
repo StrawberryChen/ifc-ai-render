@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "planning"))
-from scene_planner import build_template_plan, validate_inventory, validate_plan
+from scene_planner import build_chat_payload, build_template_plan, validate_inventory, validate_plan
 
 
 class ScenePlannerTests(unittest.TestCase):
@@ -31,6 +31,11 @@ class ScenePlannerTests(unittest.TestCase):
         self.inventory["objects"].append(dict(self.inventory["objects"][0]))
         with self.assertRaises(ValueError):
             validate_inventory(self.inventory)
+
+    def test_deepseek_payload_requests_json_and_disables_thinking(self):
+        payload = build_chat_payload("deepseek-v4-flash", "plan", "disabled")
+        self.assertEqual(payload["response_format"], {"type": "json_object"})
+        self.assertEqual(payload["thinking"], {"type": "disabled"})
 
 
 if __name__ == "__main__":

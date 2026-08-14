@@ -47,6 +47,29 @@ python3 planning/scene_planner.py \
 
 密钥只放环境变量，不写入配置或 Git。模型返回后仍执行本地验证，阻止未知对象 ID 和结构不完整的计划进入 Blender。
 
+## DeepSeek V4
+
+DeepSeek 已作为内置 provider 接入。只需要在 DeepSeek 开放平台创建 API Key，并将它保存在当前终端的环境变量中：
+
+```bash
+export SCENE_PLANNER_API_KEY="sk-你的DeepSeek密钥"
+
+python3 planning/scene_planner.py \
+  --inventory data/examples/campus_scene_inventory.json \
+  --brief data/examples/campus_visual_brief.json \
+  --output outputs/planning/campus_scene_plan.deepseek.json \
+  --provider deepseek \
+  --model deepseek-v4-flash
+```
+
+默认使用非思考模式以降低延迟并保持 JSON 输出稳定。大型项目可切换：
+
+```bash
+--model deepseek-v4-pro --thinking enabled
+```
+
+内置 DeepSeek provider 自动使用 `https://api.deepseek.com/chat/completions`，无需手工设置 endpoint。`deepseek-v4-flash` 用于快速和低成本规划，`deepseek-v4-pro` 用于复杂场景和规划纠错。
+
 ## 后续接口
 
 Blender Executor 将按计划实现：
