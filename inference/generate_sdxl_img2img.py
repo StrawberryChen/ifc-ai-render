@@ -66,9 +66,18 @@ def prepare_image(path: Path, width: int, height: int, resize_mode: str) -> Any:
     raise ValueError(f"不支持的 resize_mode: {resize_mode}")
 
 
-def prepare_control_image(path: Path, width: int, height: int, resize_mode: str) -> Any:
+def prepare_control_image(
+    path: Path,
+    width: int,
+    height: int,
+    resize_mode: str,
+    invert: bool = False,
+) -> Any:
     """Load a precomputed RGB control map and keep it pixel-aligned with the init image."""
-    return prepare_image(path, width, height, resize_mode)
+    from PIL import ImageOps
+
+    image = prepare_image(path, width, height, resize_mode)
+    return ImageOps.invert(image) if invert else image
 
 
 def build_pipeline(config: dict[str, Any], cache_dir: Path | None) -> Any:
@@ -142,6 +151,7 @@ def run(config: dict[str, Any], repo_root: Path, cache_dir: Path | None, input_o
             int(config["input"]["width"]),
             int(config["input"]["height"]),
             config["input"].get("resize_mode", "cover"),
+            bool(controlnet_config.get("invert_image", False)),
         )
     pipeline = build_pipeline(config, cache_dir)
     seed = int(config["inference"]["seed"])
