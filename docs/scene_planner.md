@@ -79,7 +79,7 @@ python3 planning/scene_planner.py \
 .venv/bin/streamlit run planning/scene_planner_app.py
 ```
 
-浏览器会打开 `http://localhost:8501`。在侧栏输入 DeepSeek API Key，然后在聊天框中用自然语言描述需求。Agent 每轮最多追问一个关键问题；信息足够后点击“生成场景计划”。
+浏览器会打开 `http://localhost:8501`。界面优先读取环境变量 `SCENE_PLANNER_API_KEY`；仅在未设置时显示密码输入框。然后在聊天框中用自然语言描述需求。Agent 每轮最多追问一个关键问题；信息足够后点击“生成场景计划”。
 
 API Key 使用密码输入框，只存在当前 Streamlit 会话，不写入 JSON、代码或 Git。界面默认读取模拟校园清单和视觉需求，也支持上传其他 inventory/brief JSON。
 

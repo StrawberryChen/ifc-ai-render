@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -86,7 +87,17 @@ st.caption("与 DeepSeek 对话确认表现需求，再生成可由 Blender Exec
 
 with st.sidebar:
     st.header("连接与项目")
-    api_key = st.text_input("DeepSeek API Key", type="password", help="仅保存在当前页面会话，不写入项目文件。")
+    environment_api_key = os.environ.get("SCENE_PLANNER_API_KEY", "").strip()
+    if environment_api_key:
+        api_key = environment_api_key
+        st.success("已从环境变量读取 DeepSeek API Key")
+        st.caption("界面不会显示、保存或返回该密钥。")
+    else:
+        api_key = st.text_input(
+            "DeepSeek API Key",
+            type="password",
+            help="未检测到 SCENE_PLANNER_API_KEY；输入值仅保存在当前页面会话。",
+        )
     model = st.selectbox("模型", ["deepseek-v4-flash", "deepseek-v4-pro"], index=0)
     thinking = st.selectbox("思考模式", ["disabled", "enabled"], index=0)
     inventory_upload = st.file_uploader("场景清单 JSON（可选）", type=["json"], key="inventory")
