@@ -1,0 +1,11 @@
+{
+  "license_id": "SELF_OWNED_CC0_COMPATIBLE",
+  "name": "Project-owned unrestricted procedural asset",
+  "origin": "Generated entirely by ifc-ai-render source code from Blender primitives and procedural materials",
+  "commercial_use": true,
+  "modification": true,
+  "redistribution": true,
+  "model_training": true,
+  "attribution_required": false,
+  "notes": "No third-party mesh, texture, HDRI or trademark is included. This record describes project-created assets and is not a third-party license grant."
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "preset_id": "northeast_china_campus",
+  "materials": {
+    "pedestrian": "mat_concrete_light",
+    "road": "mat_asphalt_dark",
+    "parking": "mat_asphalt_dark",
+    "green_area": "mat_grass_campus",
+    "sports_field": "mat_track_red"
+  },
+  "vegetation": {
+    "asset_pool": ["tree_deciduous_01", "tree_deciduous_02", "tree_deciduous_03"],
+    "default_density": 0.32,
+    "minimum_spacing_m": 6.0,
+    "building_clearance_m": 5.0,
+    "road_clearance_m": 1.5,
+    "random_rotation": true
+  },
+  "street_lighting": {
+    "asset_id": "streetlight_campus_01",
+    "default_spacing_m": 22.0
+  }
+}

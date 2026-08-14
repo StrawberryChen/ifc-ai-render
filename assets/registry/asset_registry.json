@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "library_id": "ifc_ai_render_core",
+  "assets": [
+    {"asset_id": "mat_concrete_light", "asset_type": "material", "file": "library/core_materials.blend", "datablock": "AIR_MAT_Concrete_Light", "semantic_tags": ["concrete", "pedestrian", "plaza"], "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "mat_asphalt_dark", "asset_type": "material", "file": "library/core_materials.blend", "datablock": "AIR_MAT_Asphalt_Dark", "semantic_tags": ["asphalt", "road", "parking"], "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "mat_grass_campus", "asset_type": "material", "file": "library/core_materials.blend", "datablock": "AIR_MAT_Grass_Campus", "semantic_tags": ["grass", "green_area", "campus"], "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "mat_track_red", "asset_type": "material", "file": "library/core_materials.blend", "datablock": "AIR_MAT_Track_Red", "semantic_tags": ["track", "sports_field"], "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "mat_steel_dark", "asset_type": "material", "file": "library/core_materials.blend", "datablock": "AIR_MAT_Steel_Dark", "semantic_tags": ["steel", "building", "streetlight"], "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "mat_glass_architectural", "asset_type": "material", "file": "library/core_materials.blend", "datablock": "AIR_MAT_Glass_Architectural", "semantic_tags": ["glass", "building", "window"], "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "tree_deciduous_01", "asset_type": "collection", "file": "library/core_objects.blend", "datablock": "AIR_OBJ_Tree_Deciduous_01", "semantic_tags": ["tree", "deciduous", "temperate", "campus"], "nominal_height_m": 8.0, "scale_range": [0.82, 1.18], "lod": "preview", "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "tree_deciduous_02", "asset_type": "collection", "file": "library/core_objects.blend", "datablock": "AIR_OBJ_Tree_Deciduous_02", "semantic_tags": ["tree", "deciduous", "temperate", "campus"], "nominal_height_m": 10.5, "scale_range": [0.82, 1.15], "lod": "preview", "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "tree_deciduous_03", "asset_type": "collection", "file": "library/core_objects.blend", "datablock": "AIR_OBJ_Tree_Deciduous_03", "semantic_tags": ["tree", "deciduous", "temperate", "campus"], "nominal_height_m": 6.5, "scale_range": [0.85, 1.2], "lod": "preview", "license_id": "SELF_OWNED_CC0_COMPATIBLE"},
+    {"asset_id": "streetlight_campus_01", "asset_type": "collection", "file": "library/core_objects.blend", "datablock": "AIR_OBJ_Streetlight_Campus_01", "semantic_tags": ["streetlight", "road", "pedestrian", "campus"], "nominal_height_m": 5.5, "scale_range": [1.0, 1.0], "lod": "preview", "license_id": "SELF_OWNED_CC0_COMPATIBLE"}
+  ]
+}

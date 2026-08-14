@@ -195,6 +195,20 @@ python3 semantic/semantic_mapper.py \
   --report outputs/executor/sdcc.execution_report.json
 ```
 
+## 自有核心资产库
+
+第一阶段资产库使用Blender基础几何和程序化材质生成，不包含第三方资源，可用于商业化原型和自动化接口验证：
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender \
+  -b --python blender/build_core_asset_library.py -- \
+  --output-dir assets/library
+
+python3 scripts/validate_asset_registry.py
+```
+
+当前包含6种PBR材质、3种乔木和1种校园路灯，以及东北校园预设和许可证注册表。详见 `assets/README.md`。
+
 DeepSeek V4快速规划：
 
 ```bash
