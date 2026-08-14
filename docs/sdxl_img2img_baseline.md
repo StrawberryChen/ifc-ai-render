@@ -173,6 +173,14 @@ Colab 使用：
 notebooks/sdxl_img2img_baseline_colab.ipynb
 ```
 
+Notebook 与旧版 Qwen 实验共用以下持久化缓存目录：
+
+```text
+MyDrive/ifc-ai-render-cache/huggingface
+```
+
+不要随意更改 `CACHE_DIR`，否则 Hugging Face 会在新目录重新下载一份权重。不同模型仍会分别占用空间；共用缓存目录并不代表 Qwen 权重可以替代 SDXL 权重。
+
 命令行校验配置但不下载模型：
 
 ```bash
