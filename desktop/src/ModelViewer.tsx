@@ -7,6 +7,8 @@ function SceneModel({ modelUrl }: { modelUrl: string }) {
   const gltf = useGLTF(modelUrl);
   const object = useMemo<Object3D>(() => gltf.scene.clone(true), [gltf.scene]);
   useEffect(() => {
+    const renderOnlyContext = object.getObjectByName("AIR_ContextGround");
+    if (renderOnlyContext?.parent) renderOnlyContext.parent.remove(renderOnlyContext);
     const bounds = new Box3().setFromObject(object);
     const center = bounds.getCenter(new Vector3());
     const size = bounds.getSize(new Vector3());
