@@ -11,7 +11,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from prompt_builder import build_planner_prompt
+try:
+    from .prompt_builder import build_planner_prompt
+except ImportError:  # Direct script and Streamlit execution.
+    from prompt_builder import build_planner_prompt
 
 
 PLAN_VERSION = "1.0"

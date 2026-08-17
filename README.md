@@ -250,7 +250,9 @@ cd desktop
 npm run tauri dev
 ```
 
-应用退出时会同时关闭本地 API。现阶段“分析并保存修改”建立可审计的草稿版本；下一阶段将在同一接口中连接 DeepSeek Tool Action 和 Blender 快速预览任务。
+应用退出时会同时关闭本地 API。
+
+提示词链路现已接入：配置 `SCENE_PLANNER_API_KEY` 时使用 DeepSeek 生成受 Tool Schema 约束的动作；未配置时仅启用少量本地演示规则。动作校验通过后会在后台运行 Blender Executor，生成 Eevee 预览并重新导出布景 GLB，页面自动轮询状态并更新。
 
 ## 模型与运行时
 
