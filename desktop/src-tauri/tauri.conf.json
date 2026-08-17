@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FormRender",
+  "version": "0.1.0",
+  "identifier": "com.ifcairender.formrender",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "title": "FormRender 建筑可视化工作台",
+      "width": 1440,
+      "height": 900,
+      "minWidth": 980,
+      "minHeight": 680,
+      "center": true
+    }],
+    "security": { "csp": null }
+  },
+  "bundle": { "active": true, "targets": "all" }
+}

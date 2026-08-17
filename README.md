@@ -230,6 +230,28 @@ python3 planning/scene_planner.py \
 .venv/bin/streamlit run planning/scene_planner_app.py
 ```
 
+## FormRender 桌面应用原型
+
+桌面版使用 Tauri + React + Three.js，并自动启动只监听本机的 FastAPI 服务。当前原型包含原始模型、布景模型、Blender 渲染预览、提示词指导和近 5 次版本恢复。
+
+首次安装依赖：
+
+```bash
+.venv/bin/pip install -r requirements-desktop.txt
+cd desktop
+npm install
+rustup default stable
+```
+
+启动 macOS 开发预览：
+
+```bash
+cd desktop
+npm run tauri dev
+```
+
+应用退出时会同时关闭本地 API。现阶段“分析并保存修改”建立可审计的草稿版本；下一阶段将在同一接口中连接 DeepSeek Tool Action 和 Blender 快速预览任务。
+
 ## 模型与运行时
 
 - [Qwen/Qwen-Image](https://huggingface.co/Qwen/Qwen-Image)
