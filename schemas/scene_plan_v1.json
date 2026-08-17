@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ifc-ai-render.local/schemas/scene_plan_v1.json",
+  "title": "Architectural Visualization Scene Plan",
+  "type": "object",
+  "required": [
+    "schema_version", "project", "assumptions", "questions", "camera_plan",
+    "lighting_plan", "material_plan", "landscape_plan", "entourage_plan",
+    "render_plan", "postprocess_plan"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "project": {"type": "object", "required": ["name", "goal", "source_mode"]},
+    "assumptions": {"type": "array", "items": {"type": "string"}},
+    "questions": {"type": "array", "items": {"type": "object"}},
+    "camera_plan": {
+      "type": "object",
+      "required": ["shots"],
+      "properties": {"shots": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["id", "type", "focal_length_mm"]}}}
+    },
+    "lighting_plan": {"type": "object"},
+    "material_plan": {"type": "object", "required": ["assignments"]},
+    "landscape_plan": {"type": "object"},
+    "entourage_plan": {"type": "object"},
+    "render_plan": {"type": "object"},
+    "postprocess_plan": {"type": "object"},
+    "edit_history": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": true
+}

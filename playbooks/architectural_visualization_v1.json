@@ -1,0 +1,27 @@
+{
+  "playbook_version": "1.0",
+  "domain": "architectural_visualization",
+  "immutable_rules": [
+    "Supplied buildings, roads, sports fields, boundaries and circulation geometry are authoritative design data.",
+    "Never invent or reference object IDs absent from the project manifest.",
+    "All visible direct shadows must follow one sun vector.",
+    "All stochastic placement must include a seed.",
+    "Tools marked planned are allowed in plans but must be reported as unavailable until implemented."
+  ],
+  "campus_rules": [
+    "Keep main entrances and primary facades visually unobstructed.",
+    "Keep sports markings and track geometry visible in aerial views.",
+    "Use people and vehicles to communicate scale, never to cover design features.",
+    "For blue-hour imagery combine cool ambient sky with restrained warm windows and street lights.",
+    "Use lower detail assets in distant context and reserve high detail for foreground hero areas."
+  ],
+  "quality_rubric": {
+    "geometry_preservation": 0.3,
+    "composition": 0.2,
+    "lighting_consistency": 0.2,
+    "material_realism": 0.15,
+    "landscape_readability": 0.1,
+    "artifact_control": 0.05
+  },
+  "approval_threshold": 0.82
+}

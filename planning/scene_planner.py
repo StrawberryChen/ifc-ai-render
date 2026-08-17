@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from prompt_builder import build_planner_prompt
+
 
 PLAN_VERSION = "1.0"
 
@@ -148,7 +150,18 @@ def build_template_plan(inventory: dict[str, Any], brief: dict[str, Any]) -> dic
     }
 
 
-def planner_prompt(inventory: dict[str, Any], brief: dict[str, Any], template: dict[str, Any]) -> str:
+def planner_prompt(
+    inventory: dict[str, Any],
+    brief: dict[str, Any],
+    template: dict[str, Any],
+    tool_schema: dict[str, Any] | None = None,
+    asset_registry: dict[str, Any] | None = None,
+    playbook: dict[str, Any] | None = None,
+) -> str:
+    if tool_schema is not None and asset_registry is not None and playbook is not None:
+        return build_planner_prompt(
+            inventory, brief, template, tool_schema, asset_registry, playbook
+        )
     return (
         "You are an architectural visualization scene planner. Return JSON only. "
         "Never redesign authoritative geometry. Vegetation, materials, cameras, lighting and entourage "
@@ -236,6 +249,9 @@ def main() -> int:
     parser.add_argument("--model", default=os.environ.get("SCENE_PLANNER_MODEL", "qwen-plus"))
     parser.add_argument("--api-key-env", default="SCENE_PLANNER_API_KEY")
     parser.add_argument("--thinking", choices=["enabled", "disabled"], default="disabled")
+    parser.add_argument("--tool-schema", type=Path, default=Path("schemas/blender_tools_v1.json"))
+    parser.add_argument("--asset-registry", type=Path, default=Path("assets/registry/asset_registry.json"))
+    parser.add_argument("--playbook", type=Path, default=Path("playbooks/architectural_visualization_v1.json"))
     args = parser.parse_args()
 
     inventory = load_json(args.inventory)
@@ -256,7 +272,14 @@ def main() -> int:
             args.endpoint,
             api_key,
             args.model,
-            planner_prompt(inventory, brief, template),
+            planner_prompt(
+                inventory,
+                brief,
+                template,
+                load_json(args.tool_schema),
+                load_json(args.asset_registry),
+                load_json(args.playbook),
+            ),
             thinking=args.thinking if args.provider == "deepseek" else None,
         )
     validate_plan(plan, inventory)

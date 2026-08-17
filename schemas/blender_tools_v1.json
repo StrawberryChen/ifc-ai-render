@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "description": "Versioned safe tool contract shared by DeepSeek Planner, frontend controls and Blender Executor.",
+  "tools": [
+    {
+      "tool_id": "camera.update_shot",
+      "executor_status": "implemented",
+      "ui": {"group": "相机", "label": "调整视角", "icon": "camera"},
+      "parameters": {
+        "shot_id": {"type": "string", "required": true, "ui": {"widget": "select", "options_source": "camera_shot_ids", "label": "视角"}},
+        "focal_length_mm": {"type": "number", "minimum": 18, "maximum": 120, "default": 45, "ui": {"widget": "slider", "step": 1, "label": "焦距(mm)"}},
+        "target_coverage": {"type": "number", "minimum": 0.3, "maximum": 0.95, "default": 0.72, "ui": {"widget": "slider", "step": 0.01, "label": "主体画面占比"}}
+      }
+    },
+    {
+      "tool_id": "lighting.set_sun",
+      "executor_status": "implemented",
+      "ui": {"group": "灯光", "label": "太阳与阴影", "icon": "sun"},
+      "parameters": {
+        "elevation_deg": {"type": "number", "minimum": -5, "maximum": 85, "default": 8, "ui": {"widget": "slider", "step": 1, "label": "太阳高度"}},
+        "azimuth_deg": {"type": "number", "minimum": 0, "maximum": 360, "default": 235, "ui": {"widget": "slider", "step": 1, "label": "太阳方位"}},
+        "strength": {"type": "number", "minimum": 0, "maximum": 10, "default": 1.8, "ui": {"widget": "slider", "step": 0.1, "label": "太阳强度"}},
+        "temperature_k": {"type": "integer", "minimum": 2000, "maximum": 10000, "default": 4300, "ui": {"widget": "slider", "step": 100, "label": "色温(K)"}}
+      }
+    },
+    {
+      "tool_id": "lighting.set_world",
+      "executor_status": "implemented",
+      "ui": {"group": "灯光", "label": "天空环境", "icon": "cloud"},
+      "parameters": {
+        "strength": {"type": "number", "minimum": 0, "maximum": 3, "default": 0.35, "ui": {"widget": "slider", "step": 0.05, "label": "环境亮度"}},
+        "sky_tint": {"type": "string", "enum": ["cool_blue", "neutral", "warm"], "default": "cool_blue", "ui": {"widget": "select", "label": "天空色调"}}
+      }
+    },
+    {
+      "tool_id": "lighting.set_windows",
+      "executor_status": "planned",
+      "ui": {"group": "灯光", "label": "建筑亮窗", "icon": "building"},
+      "parameters": {
+        "enabled": {"type": "boolean", "default": true, "ui": {"widget": "toggle", "label": "启用亮窗"}},
+        "lit_ratio": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.38, "ui": {"widget": "slider", "step": 0.01, "label": "亮窗比例"}},
+        "temperature_k": {"type": "integer", "minimum": 2200, "maximum": 6500, "default": 3200, "ui": {"widget": "slider", "step": 100, "label": "室内色温(K)"}}
+      }
+    },
+    {
+      "tool_id": "lighting.set_streetlights",
+      "executor_status": "implemented",
+      "ui": {"group": "灯光", "label": "道路灯光", "icon": "lightbulb"},
+      "parameters": {
+        "enabled": {"type": "boolean", "default": true, "ui": {"widget": "toggle", "label": "启用路灯"}},
+        "spacing_m": {"type": "number", "minimum": 8, "maximum": 60, "default": 22, "ui": {"widget": "slider", "step": 1, "label": "间距(m)"}},
+        "temperature_k": {"type": "integer", "minimum": 2200, "maximum": 6500, "default": 3000, "ui": {"widget": "slider", "step": 100, "label": "色温(K)"}}
+      }
+    },
+    {
+      "tool_id": "landscape.configure",
+      "executor_status": "implemented",
+      "ui": {"group": "景观", "label": "乔木布置", "icon": "tree"},
+      "parameters": {
+        "preset": {"type": "string", "default": "northeast_china_campus", "ui": {"widget": "text", "label": "景观预设"}},
+        "tree_density": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.32, "ui": {"widget": "slider", "step": 0.01, "label": "乔木密度"}},
+        "minimum_spacing_m": {"type": "number", "minimum": 2, "maximum": 20, "default": 6, "ui": {"widget": "slider", "step": 0.5, "label": "最小树距(m)"}},
+        "building_clearance_m": {"type": "number", "minimum": 0, "maximum": 30, "default": 5, "ui": {"widget": "slider", "step": 0.5, "label": "建筑避让(m)"}},
+        "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647, "default": 4201, "ui": {"widget": "number", "label": "随机种子"}}
+      }
+    },
+    {
+      "tool_id": "render.configure",
+      "executor_status": "implemented",
+      "ui": {"group": "输出", "label": "渲染输出", "icon": "image"},
+      "parameters": {
+        "preview_width": {"type": "integer", "minimum": 512, "maximum": 4096, "default": 1280, "ui": {"widget": "number", "label": "预览宽度"}},
+        "preview_height": {"type": "integer", "minimum": 512, "maximum": 4096, "default": 720, "ui": {"widget": "number", "label": "预览高度"}},
+        "final_width": {"type": "integer", "minimum": 1024, "maximum": 8192, "default": 4096, "ui": {"widget": "number", "label": "最终宽度"}},
+        "final_height": {"type": "integer", "minimum": 1024, "maximum": 8192, "default": 3072, "ui": {"widget": "number", "label": "最终高度"}}
+      }
+    },
+    {
+      "tool_id": "postprocess.configure",
+      "executor_status": "planned",
+      "ui": {"group": "AI增强", "label": "渲染增强", "icon": "sparkles"},
+      "parameters": {
+        "global_strength": {"type": "number", "minimum": 0.05, "maximum": 0.5, "default": 0.25, "ui": {"widget": "slider", "step": 0.01, "label": "整图增强强度"}},
+        "upscale": {"type": "integer", "enum": [1, 2, 4], "default": 2, "ui": {"widget": "select", "label": "超分倍率"}},
+        "tiled_refinement": {"type": "boolean", "default": true, "ui": {"widget": "toggle", "label": "分块细化"}}
+      }
+    }
+  ]
+}
