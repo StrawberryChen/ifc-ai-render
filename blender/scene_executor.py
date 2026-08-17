@@ -72,16 +72,37 @@ def configure_world(plan: dict[str, Any]) -> dict[str, Any]:
     world = bpy.context.scene.world or bpy.data.worlds.new("AIR_World")
     bpy.context.scene.world = world
     world.use_nodes = True
-    background = world.node_tree.nodes.get("Background")
+    nodes = world.node_tree.nodes
+    links = world.node_tree.links
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputWorld")
+    background = nodes.new("ShaderNodeBackground")
+    sky = nodes.new("ShaderNodeTexSky")
+    tint_mix = nodes.new("ShaderNodeMixRGB")
+    try:
+        sky.sky_type = "NISHITA"
+    except TypeError:
+        sky.sky_type = "MULTIPLE_SCATTERING"
+    sky.sun_disc = True
+    sun_config = lighting.get("sun", {})
+    sky.sun_elevation = math.radians(float(sun_config.get("elevation_deg", 8)))
+    sky.sun_rotation = math.radians(float(sun_config.get("azimuth_deg", 235)))
+    sky.altitude = 0.2
+    sky.air_density = 1.15
+    links.new(sky.outputs["Color"], tint_mix.inputs[1])
+    links.new(tint_mix.outputs["Color"], background.inputs["Color"])
+    links.new(background.outputs["Background"], output.inputs["Surface"])
     tint = world_config.get("sky_tint", "neutral")
     colors = {
         "cool_blue": (0.055, 0.085, 0.16, 1.0),
         "warm": (0.22, 0.13, 0.07, 1.0),
         "neutral": (0.12, 0.12, 0.12, 1.0),
     }
-    background.inputs["Color"].default_value = colors.get(tint, colors["neutral"])
-    background.inputs["Strength"].default_value = float(world_config.get("strength", 0.35))
-    return {"action": "configure_world", "status": "executed", "tint": tint}
+    tint_mix.blend_type = "MULTIPLY"
+    tint_mix.inputs[0].default_value = 0.42 if tint == "cool_blue" else 0.25
+    tint_mix.inputs[2].default_value = colors.get(tint, colors["neutral"])
+    background.inputs["Strength"].default_value = max(0.45, float(world_config.get("strength", 0.35)))
+    return {"action": "configure_world", "status": "executed", "tint": tint, "sky": "nishita"}
 
 
 def configure_sun(plan: dict[str, Any], collection: bpy.types.Collection) -> dict[str, Any]:
@@ -140,7 +161,7 @@ def configure_cameras(
     minimum, maximum = scene_bounds(design_objects)
     center = (minimum + maximum) * 0.5
     size = maximum - minimum
-    radius = max(size.x, size.y, size.z * 2, 10.0)
+    radius = max(size.x, size.y, size.z * 2, 0.1)
     reports = []
     directions = [225, 135, 315, 45]
     for index, shot in enumerate(plan["camera_plan"].get("shots", [])):
@@ -156,7 +177,9 @@ def configure_cameras(
             distance, height = radius * 1.25, max(1.7, minimum.z + size.z * 0.18)
             target = Vector((center.x, center.y, minimum.z + size.z * 0.35))
         else:
-            distance, height = radius * 1.45, maximum.z + radius * 0.85
+            coverage = min(0.9, max(0.35, float(shot.get("target_coverage", 0.72))))
+            framing_scale = 0.72 / coverage
+            distance, height = radius * 1.35 * framing_scale, maximum.z + radius * 0.72 * framing_scale
             target = center
         camera.location = Vector((
             center.x + math.cos(azimuth) * distance,
@@ -171,6 +194,43 @@ def configure_cameras(
     if reports:
         bpy.context.scene.camera = bpy.data.objects[reports[0]["object"]]
     return reports
+
+
+def configure_context_ground(
+    design_objects: list[bpy.types.Object], collection: bpy.types.Collection, plan: dict[str, Any]
+) -> dict[str, Any]:
+    """Add a neutral visualization ground when the supplied model has no surrounding context."""
+    minimum, maximum = scene_bounds(design_objects)
+    center = (minimum + maximum) * 0.5
+    size = maximum - minimum
+    radius = max(size.x, size.y, 1.0)
+    mesh = bpy.data.meshes.get("AIR_ContextGround_Mesh")
+    context = bpy.data.objects.get("AIR_ContextGround")
+    if context is None:
+        bpy.ops.mesh.primitive_plane_add(
+            size=radius * 12,
+            location=(center.x, center.y, minimum.z - max(radius * 0.004, 0.002)),
+        )
+        context = bpy.context.object
+        context.name = "AIR_ContextGround"
+        mesh = context.data
+        mesh.name = "AIR_ContextGround_Mesh"
+        link_only(context, collection)
+    material = bpy.data.materials.get("AIR_ContextGround_Material") or bpy.data.materials.new("AIR_ContextGround_Material")
+    material.use_nodes = True
+    material_nodes = material.node_tree.nodes
+    principled = material_nodes.get("Principled BSDF") or material_nodes.new("ShaderNodeBsdfPrincipled")
+    material_output = material_nodes.get("Material Output") or material_nodes.new("ShaderNodeOutputMaterial")
+    if not principled.outputs["BSDF"].is_linked:
+        material.node_tree.links.new(principled.outputs["BSDF"], material_output.inputs["Surface"])
+    preset = plan.get("lighting_plan", {}).get("preset", "neutral")
+    color = (0.075, 0.105, 0.13, 1.0) if preset == "blue_hour" else (0.19, 0.22, 0.18, 1.0)
+    principled.inputs["Base Color"].default_value = color
+    principled.inputs["Roughness"].default_value = 0.92
+    context.data.materials.clear()
+    context.data.materials.append(material)
+    context["air_visualization_context"] = True
+    return {"action": "context_ground", "status": "executed", "size": radius * 12}
 
 
 def bbox(obj: bpy.types.Object) -> tuple[Vector, Vector]:
@@ -386,7 +446,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     preset = read_json(args.asset_preset)
     meters_per_unit, scale_source = infer_meters_per_unit(manifest, object_map, args.meters_per_unit)
     actions = [configure_world(plan), configure_sun(plan, controls), configure_render(plan, args.preview)]
-    actions.extend(configure_cameras(plan, list(object_map.values()), controls))
+    design_objects = list(object_map.values())
+    actions.extend(configure_cameras(plan, design_objects, controls))
+    actions.append(configure_context_ground(design_objects, controls, plan))
     actions.extend([
         apply_semantic_materials(manifest, object_map, preset, library),
         scatter_landscape(manifest, object_map, plan, preset, library, asset_instances, meters_per_unit),
