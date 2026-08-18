@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "provider": "Poly Haven",
+  "provider_url": "https://polyhaven.com",
+  "license_id": "POLY_HAVEN_CC0",
+  "resolution": "1k",
+  "assets": [
+    {"asset_id": "ph_asphalt_02", "provider_id": "asphalt_02", "type": "texture", "name_zh": "校园道路沥青", "tags": ["road", "asphalt", "campus"]},
+    {"asset_id": "ph_concrete_pavers_02", "provider_id": "concrete_pavers_02", "type": "texture", "name_zh": "灰色混凝土铺装", "tags": ["plaza", "pedestrian", "paving"]},
+    {"asset_id": "ph_concrete_floor_02", "provider_id": "concrete_floor_02", "type": "texture", "name_zh": "浅色混凝土地面", "tags": ["concrete", "plaza", "campus"]},
+    {"asset_id": "ph_leafy_grass", "provider_id": "leafy_grass", "type": "texture", "name_zh": "自然草地", "tags": ["grass", "green_area", "campus"]},
+    {"asset_id": "ph_belfast_sunset_puresky", "provider_id": "belfast_sunset_puresky", "type": "hdri", "name_zh": "低对比度黄昏天空", "tags": ["dusk", "blue_hour", "campus"]}
+  ]
+}

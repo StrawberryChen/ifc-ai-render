@@ -1,0 +1,12 @@
+{
+  "license_id": "POLY_HAVEN_CC0",
+  "name": "Creative Commons CC0",
+  "provider": "Poly Haven",
+  "license_url": "https://polyhaven.com/license",
+  "commercial_use": true,
+  "modification": true,
+  "redistribution": true,
+  "attribution_required_for_assets": false,
+  "api_attribution_note": "When using the live Poly Haven API in a product, identify Poly Haven as the asset source.",
+  "retrieved_at": "2026-08-18"
+}

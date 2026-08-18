@@ -2,10 +2,10 @@
   "schema_version": "1.0",
   "preset_id": "northeast_china_campus",
   "materials": {
-    "pedestrian": "mat_concrete_light",
-    "road": "mat_asphalt_dark",
-    "parking": "mat_asphalt_dark",
-    "green_area": "mat_grass_campus",
+    "pedestrian": "ph_concrete_pavers_02",
+    "road": "ph_asphalt_02",
+    "parking": "ph_asphalt_02",
+    "green_area": "ph_leafy_grass",
     "sports_field": "mat_track_red"
   },
   "vegetation": {
