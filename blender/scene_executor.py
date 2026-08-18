@@ -197,9 +197,12 @@ def configure_cameras(
 
 
 def configure_context_ground(
-    design_objects: list[bpy.types.Object], collection: bpy.types.Collection, plan: dict[str, Any]
+    design_objects: list[bpy.types.Object],
+    collection: bpy.types.Collection,
+    plan: dict[str, Any],
+    has_supplied_context: bool,
 ) -> dict[str, Any]:
-    """Add a neutral visualization ground when the supplied model has no surrounding context."""
+    """Add non-authoritative surroundings when the supplied model has no context geometry."""
     minimum, maximum = scene_bounds(design_objects)
     center = (minimum + maximum) * 0.5
     size = maximum - minimum
@@ -230,7 +233,43 @@ def configure_context_ground(
     context.data.materials.clear()
     context.data.materials.append(material)
     context["air_visualization_context"] = True
-    return {"action": "context_ground", "status": "executed", "size": radius * 12}
+
+    context_blocks = []
+    if not has_supplied_context:
+        block_material = bpy.data.materials.get("AIR_ContextBlock_Material") or bpy.data.materials.new("AIR_ContextBlock_Material")
+        block_material.diffuse_color = (0.12, 0.15, 0.18, 1.0) if preset == "blue_hour" else (0.32, 0.33, 0.31, 1.0)
+        half_x, half_y = max(size.x * 0.5, radius * 0.18), max(size.y * 0.5, radius * 0.18)
+        margin = radius * 0.42
+        placements = [
+            (-half_x * 0.72, half_y + margin, 0.24, 0.22, 0.36),
+            (half_x * 0.02, half_y + margin, 0.30, 0.22, 0.50),
+            (half_x * 0.76, half_y + margin, 0.25, 0.22, 0.40),
+            (half_x + margin, -half_y * 0.15, 0.22, 0.28, 0.38),
+            (half_x + margin, half_y * 0.62, 0.24, 0.26, 0.46),
+        ]
+        for index, (offset_x, offset_y, sx, sy, height) in enumerate(placements, 1):
+            name = f"AIR_ContextBlock_{index:02d}"
+            block = bpy.data.objects.get(name)
+            if block is None:
+                bpy.ops.mesh.primitive_cube_add(
+                    size=1,
+                )
+                block = bpy.context.object
+                block.name = name
+                link_only(block, collection)
+            block.location = (center.x + offset_x, center.y + offset_y, minimum.z + height * radius * 0.5)
+            block.dimensions = (sx * radius, sy * radius, height * radius)
+            block.data.materials.clear()
+            block.data.materials.append(block_material)
+            block["air_visualization_context"] = True
+            context_blocks.append(block.name)
+    return {
+        "action": "context_environment",
+        "status": "executed",
+        "ground_size": radius * 12,
+        "placeholder_context": not has_supplied_context,
+        "context_blocks": context_blocks,
+    }
 
 
 def bbox(obj: bpy.types.Object) -> tuple[Vector, Vector]:
@@ -448,7 +487,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     actions = [configure_world(plan), configure_sun(plan, controls), configure_render(plan, args.preview)]
     design_objects = list(object_map.values())
     actions.extend(configure_cameras(plan, design_objects, controls))
-    actions.append(configure_context_ground(design_objects, controls, plan))
+    has_supplied_context = any(item["type"] == "context_building" for item in manifest["objects"])
+    actions.append(configure_context_ground(design_objects, controls, plan, has_supplied_context))
     actions.extend([
         apply_semantic_materials(manifest, object_map, preset, library),
         scatter_landscape(manifest, object_map, plan, preset, library, asset_instances, meters_per_unit),

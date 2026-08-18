@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { Box, ChevronRight, Clock3, History, Image, LoaderCircle, RotateCcw, Send, Sparkles, TriangleAlert } from "lucide-react";
 import ModelViewer from "./ModelViewer";
 import { API, getProject, getRevisions, restoreRevision, submitPrompt } from "./api";
@@ -63,7 +64,7 @@ export default function App() {
         </nav>
         <div className="viewport">
           {project && tab !== "render" && <ModelViewer modelUrl={`${API}${tab === "source" ? project.source_model_url : project.staged_model_url}${tab === "staged" ? `?v=${stagedVersion}` : ""}`} staged={tab === "staged"} />}
-          {project && tab === "render" && currentPreview && <img className="render-preview" src={`${API}${currentPreview}?v=${stagedVersion}`} alt="Blender render preview" />}
+          {project && tab === "render" && currentPreview && <div className="render-frame" style={{ "--preview-image": `url(${API}${currentPreview}?v=${stagedVersion})` } as CSSProperties}><img className="render-preview" src={`${API}${currentPreview}?v=${stagedVersion}`} alt="Blender render preview" /></div>}
           {!project && <div className="loading"><LoaderCircle className="spin" />连接本地项目…</div>}
           {currentRevision?.status === "rendering" && <div className="render-status"><LoaderCircle className="spin" size={18} /><div><strong>Blender 正在生成预览</strong><small>完成后会自动更新当前画面</small></div></div>}
           {currentRevision?.status === "failed" && <div className="render-status failed"><TriangleAlert size={18} /><div><strong>本次预览失败</strong><small>{currentRevision.error ?? "请检查 Blender 执行日志"}</small></div></div>}
