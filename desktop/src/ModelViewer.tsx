@@ -22,9 +22,12 @@ function SceneModel({ modelUrl }: { modelUrl: string }) {
     const scale = 7 / Math.max(size.x, size.y, size.z, 0.001);
     object.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
     object.scale.setScalar(scale);
-    object.traverse((child) => { child.castShadow = true; child.receiveShadow = true; });
   }, [object]);
   return <primitive object={object} />;
+}
+
+export function preloadModel(modelUrl: string) {
+  useGLTF.preload(modelUrl);
 }
 
 function LoadingIndicator() {
@@ -59,15 +62,15 @@ function ViewControls({ onViewChange }: { onViewChange?: (view: CameraView) => v
   return <OrbitControls ref={controls} makeDefault target={[0, 1.4, 0]} minDistance={5.25} maxDistance={28} onEnd={report} />;
 }
 
-export default function ModelViewer({ modelUrl, staged, onViewChange }: { modelUrl: string; staged: boolean; onViewChange?: (view: CameraView) => void }) {
+export default function ModelViewer({ modelUrl, staged, hidden = false, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; onViewChange?: (view: CameraView) => void }) {
   return <div className="viewer-shell">
     <ViewerErrorBoundary>
       <Suspense fallback={<LoadingIndicator />}>
-        <Canvas camera={{ position: [8, 5.5, 9], fov: 42 }} shadows dpr={[1, 1.75]}>
+        <Canvas className={hidden ? "viewer-canvas-hidden" : ""} camera={{ position: [8, 5.5, 9], fov: 42 }} dpr={[1, 1.25]} frameloop="demand" performance={{ min: 0.6 }}>
           <color attach="background" args={[staged ? "#18201e" : "#e8e5de"]} />
           <ambientLight intensity={staged ? 0.7 : 1.5} />
           <hemisphereLight color="#dcecff" groundColor="#4b554c" intensity={staged ? 1.1 : 0.8} />
-          <directionalLight position={[8, 12, 6]} intensity={staged ? 2.4 : 1.7} castShadow />
+          <directionalLight position={[8, 12, 6]} intensity={staged ? 2.4 : 1.7} />
           <SceneModel modelUrl={modelUrl} />
           {!staged && <Grid position={[0, -0.01, 0]} args={[40, 40]} cellColor="#c7c2b8" sectionColor="#a8a196" fadeDistance={25} />}
           <ViewControls onViewChange={onViewChange} />

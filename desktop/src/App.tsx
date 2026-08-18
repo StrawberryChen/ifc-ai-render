@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { Box, Camera, ChevronRight, Clock3, History, Image, LoaderCircle, RotateCcw, Send, Sparkles, TriangleAlert } from "lucide-react";
-import ModelViewer from "./ModelViewer";
+import ModelViewer, { preloadModel } from "./ModelViewer";
 import { API, getProject, getRevisions, renderCameraView, restoreRevision, submitPrompt } from "./api";
 import type { CameraView, Project, Revision } from "./types";
 
@@ -19,12 +19,21 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [cameraView, setCameraView] = useState<CameraView | null>(null);
+  const [viewerTab, setViewerTab] = useState<"source" | "staged">("source");
 
   const refresh = async () => {
     const [nextProject, nextRevisions] = await Promise.all([getProject(), getRevisions()]);
     setProject(nextProject); setRevisions(nextRevisions);
   };
   useEffect(() => { refresh().catch(() => setMessage("本地服务尚未启动，请检查 FastAPI。")); }, []);
+  useEffect(() => {
+    if (!project) return;
+    preloadModel(`${API}${project.source_model_url}`);
+    preloadModel(`${API}${project.staged_model_url}?v=${revisions[0]?.number ?? 0}`);
+  }, [project, revisions]);
+  useEffect(() => {
+    if (tab !== "render") setViewerTab(tab);
+  }, [tab]);
   useEffect(() => {
     if (revisions[0]?.status !== "rendering") return;
     const timer = window.setInterval(() => refresh().catch(() => undefined), 1800);
@@ -74,7 +83,7 @@ export default function App() {
           <button className={tab === "render" ? "active" : ""} onClick={() => setTab("render")}><Image size={15} />渲染预览</button>
         </nav>
         <div className="viewport">
-          {project && tab !== "render" && <ModelViewer modelUrl={`${API}${tab === "source" ? project.source_model_url : project.staged_model_url}${tab === "staged" ? `?v=${stagedVersion}` : ""}`} staged={tab === "staged"} onViewChange={tab === "staged" ? setCameraView : undefined} />}
+          {project && <ModelViewer hidden={tab === "render"} modelUrl={`${API}${viewerTab === "source" ? project.source_model_url : project.staged_model_url}${viewerTab === "staged" ? `?v=${stagedVersion}` : ""}`} staged={viewerTab === "staged"} onViewChange={viewerTab === "staged" ? setCameraView : undefined} />}
           {project && tab === "render" && currentPreview && <div className="render-frame" style={{ "--preview-image": `url(${API}${currentPreview}?v=${stagedVersion})` } as CSSProperties}><img className="render-preview" src={`${API}${currentPreview}?v=${stagedVersion}`} alt="Blender render preview" /></div>}
           {!project && <div className="loading"><LoaderCircle className="spin" />连接本地项目…</div>}
           {currentRevision?.status === "rendering" && <div className="render-status"><LoaderCircle className="spin" size={18} /><div><strong>Blender 正在生成预览</strong><small>完成后会自动更新当前画面</small></div></div>}
