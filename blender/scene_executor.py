@@ -226,8 +226,8 @@ def configure_context_ground(
     material = bpy.data.materials.get("AIR_ContextGround_Material") or bpy.data.materials.new("AIR_ContextGround_Material")
     material.use_nodes = True
     material_nodes = material.node_tree.nodes
-    principled = material_nodes.get("Principled BSDF") or material_nodes.new("ShaderNodeBsdfPrincipled")
-    material_output = material_nodes.get("Material Output") or material_nodes.new("ShaderNodeOutputMaterial")
+    principled = next((node for node in material_nodes if node.bl_idname == "ShaderNodeBsdfPrincipled"), None) or material_nodes.new("ShaderNodeBsdfPrincipled")
+    material_output = next((node for node in material_nodes if node.bl_idname == "ShaderNodeOutputMaterial"), None) or material_nodes.new("ShaderNodeOutputMaterial")
     if not principled.outputs["BSDF"].is_linked:
         material.node_tree.links.new(principled.outputs["BSDF"], material_output.inputs["Surface"])
     preset = plan.get("lighting_plan", {}).get("preset", "neutral")
@@ -245,8 +245,8 @@ def configure_context_ground(
         block_material.diffuse_color = block_color
         block_material.use_nodes = True
         block_nodes = block_material.node_tree.nodes
-        block_principled = block_nodes.get("Principled BSDF") or block_nodes.new("ShaderNodeBsdfPrincipled")
-        block_output = block_nodes.get("Material Output") or block_nodes.new("ShaderNodeOutputMaterial")
+        block_principled = next((node for node in block_nodes if node.bl_idname == "ShaderNodeBsdfPrincipled"), None) or block_nodes.new("ShaderNodeBsdfPrincipled")
+        block_output = next((node for node in block_nodes if node.bl_idname == "ShaderNodeOutputMaterial"), None) or block_nodes.new("ShaderNodeOutputMaterial")
         if not block_principled.outputs["BSDF"].is_linked:
             block_material.node_tree.links.new(block_principled.outputs["BSDF"], block_output.inputs["Surface"])
         block_principled.inputs["Base Color"].default_value = block_color

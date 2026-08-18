@@ -29,7 +29,7 @@ export default function App() {
   useEffect(() => {
     if (!project) return;
     preloadModel(`${API}${project.source_model_url}`);
-    preloadModel(`${API}${project.staged_model_url}?v=${revisions[0]?.number ?? 0}`);
+    preloadModel(`${API}${project.staged_model_url}?v=${revisions[0]?.number ?? 0}&material=2`);
   }, [project, revisions]);
   useEffect(() => {
     if (tab !== "render") setViewerTab(tab);
@@ -83,7 +83,7 @@ export default function App() {
           <button className={tab === "render" ? "active" : ""} onClick={() => setTab("render")}><Image size={15} />渲染预览</button>
         </nav>
         <div className="viewport">
-          {project && <ModelViewer hidden={tab === "render"} modelUrl={`${API}${viewerTab === "source" ? project.source_model_url : project.staged_model_url}${viewerTab === "staged" ? `?v=${stagedVersion}` : ""}`} staged={viewerTab === "staged"} onViewChange={viewerTab === "staged" ? setCameraView : undefined} />}
+          {project && <ModelViewer hidden={tab === "render"} modelUrl={`${API}${viewerTab === "source" ? project.source_model_url : project.staged_model_url}${viewerTab === "staged" ? `?v=${stagedVersion}&material=2` : ""}`} staged={viewerTab === "staged"} onViewChange={viewerTab === "staged" ? setCameraView : undefined} />}
           {project && tab === "render" && currentPreview && <div className="render-frame" style={{ "--preview-image": `url(${API}${currentPreview}?v=${stagedVersion})` } as CSSProperties}><img className="render-preview" src={`${API}${currentPreview}?v=${stagedVersion}`} alt="Blender render preview" /></div>}
           {!project && <div className="loading"><LoaderCircle className="spin" />连接本地项目…</div>}
           {currentRevision?.status === "rendering" && <div className="render-status"><LoaderCircle className="spin" size={18} /><div><strong>Blender 正在生成预览</strong><small>完成后会自动更新当前画面</small></div></div>}
