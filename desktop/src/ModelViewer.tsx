@@ -3,6 +3,9 @@ import type { ModelViewerElement } from "@google/model-viewer";
 import { createElement, useEffect, useRef, useState } from "react";
 import type { CameraView } from "./types";
 
+type SavedViewerCamera = { orbit: string; target: string; fieldOfView: string };
+const savedCameras: Partial<Record<"source" | "staged", SavedViewerCamera>> = {};
+
 export function preloadModel(modelUrl: string) {
   fetch(modelUrl, { cache: "force-cache" }).catch(() => undefined);
 }
@@ -22,6 +25,7 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, referenc
       window.clearTimeout(reportTimer.current);
       reportTimer.current = window.setTimeout(() => {
         const orbit = element.getCameraOrbit();
+        const target = element.getCameraTarget();
         const dimensions = element.getDimensions();
         const designRadius = Math.max(dimensions.x, dimensions.z, dimensions.y * 2, 0.001);
         if (!staged) onReferenceRadius?.(designRadius);
@@ -29,8 +33,13 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, referenc
         const verticalFov = element.getFieldOfView() * Math.PI / 180;
         const aspect = Math.max(element.clientWidth / Math.max(element.clientHeight, 1), 0.1);
         const focalLength = 36 / (2 * Math.tan(verticalFov / 2) * aspect);
+        savedCameras[staged ? "staged" : "source"] = {
+          orbit: orbit.toString(),
+          target: target.toString(),
+          fieldOfView: `${element.getFieldOfView()}deg`,
+        };
         onViewChange?.({
-          azimuth_deg: (90 - orbit.theta * 180 / Math.PI + 360) % 360,
+          azimuth_deg: (orbit.theta * 180 / Math.PI - 90 + 360) % 360,
           elevation_deg: Math.max(8, Math.min(80, 90 - orbit.phi * 180 / Math.PI)),
           distance_multiplier: Math.max(0.25, Math.min(12, orbit.radius / distanceBasis)),
           focal_length_mm: Math.max(18, Math.min(120, focalLength)),
@@ -56,6 +65,8 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, referenc
     };
   }, [modelUrl, staged, referenceRadius, onReferenceRadius, onViewChange]);
 
+  const savedCamera = savedCameras[staged ? "staged" : "source"];
+
   return <div className={`viewer-shell ${hidden ? "viewer-shell-hidden" : ""}`}>
     {createElement("model-viewer", {
       key: modelUrl,
@@ -64,7 +75,9 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, referenc
       alt: staged ? "Blender staged architectural model" : "Source architectural model",
       "camera-controls": true,
       "interaction-prompt": "none",
-      "camera-orbit": staged ? "35deg 67deg 38%" : "35deg 67deg 85%",
+      "camera-orbit": savedCamera?.orbit ?? (staged ? "35deg 67deg 38%" : "35deg 67deg 85%"),
+      "camera-target": savedCamera?.target ?? "auto auto auto",
+      "field-of-view": savedCamera?.fieldOfView ?? "45deg",
       "min-camera-orbit": "auto 8deg 5%",
       "max-camera-orbit": "auto 86deg 500%",
       "shadow-intensity": "0",
