@@ -25,11 +25,11 @@ def main() -> int:
         filepath=str(args.output),
         export_format="GLB",
         use_selection=False,
-        export_cameras=True,
-        export_lights=True,
+        export_cameras=False,
+        export_lights=False,
         export_apply=True,
-        export_image_format="WEBP",
-        export_image_quality=72,
+        export_image_format="JPEG",
+        export_jpeg_quality=72,
     )
     print(f"Web preview exported: {args.output}")
     return 0
