@@ -1,6 +1,6 @@
 import "@google/model-viewer";
 import type { ModelViewerElement } from "@google/model-viewer";
-import { createElement, useEffect, useRef, useState } from "react";
+import { createElement, useEffect, useRef } from "react";
 import type { CameraView } from "./types";
 
 export function preloadModel(modelUrl: string) {
@@ -10,14 +10,10 @@ export function preloadModel(modelUrl: string) {
 export default function ModelViewer({ modelUrl, staged, hidden = false, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; onViewChange?: (view: CameraView) => void }) {
   const viewer = useRef<ModelViewerElement | null>(null);
   const reportTimer = useRef<number | undefined>(undefined);
-  const [progress, setProgress] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const element = viewer.current;
     if (!element) return;
-    setLoaded(false); setProgress(0); setError("");
     const report = () => {
       window.clearTimeout(reportTimer.current);
       reportTimer.current = window.setTimeout(() => {
@@ -32,20 +28,13 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, onViewCh
         });
       }, 140);
     };
-    const load = () => { setLoaded(true); setProgress(1); report(); };
-    const progressEvent = (event: Event) => setProgress((event as CustomEvent<{ totalProgress: number }>).detail.totalProgress);
-    const fail = () => setError("三维模型载入失败");
-    element.addEventListener("load", load);
-    element.addEventListener("progress", progressEvent);
+    element.addEventListener("load", report);
     element.addEventListener("camera-change", report);
-    element.addEventListener("error", fail);
-    if (element.loaded) load();
+    if (element.loaded) report();
     return () => {
       window.clearTimeout(reportTimer.current);
-      element.removeEventListener("load", load);
-      element.removeEventListener("progress", progressEvent);
+      element.removeEventListener("load", report);
       element.removeEventListener("camera-change", report);
-      element.removeEventListener("error", fail);
     };
   }, [modelUrl, onViewChange]);
 
@@ -64,7 +53,5 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, onViewCh
       loading: "eager",
       reveal: "auto",
     })}
-    {!loaded && !error && <div className="viewer-state"><span className="viewer-loader" /><strong>正在载入三维场景 {Math.round(progress * 100)}%</strong><small>轻量 GLB 查看器</small></div>}
-    {error && <div className="viewer-state error"><strong>{error}</strong><small>请重新生成前端预览模型</small></div>}
   </div>;
 }
