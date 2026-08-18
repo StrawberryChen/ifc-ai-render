@@ -10,7 +10,7 @@ export function preloadModel(modelUrl: string) {
   fetch(modelUrl, { cache: "force-cache" }).catch(() => undefined);
 }
 
-export default function ModelViewer({ modelUrl, staged, hidden = false, referenceRadius, onReferenceRadius, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; referenceRadius?: number; onReferenceRadius?: (radius: number) => void; onViewChange?: (view: CameraView) => void }) {
+export default function ModelViewer({ modelUrl, staged, hidden = false, environmentUrl, referenceRadius, onReferenceRadius, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; environmentUrl?: string; referenceRadius?: number; onReferenceRadius?: (radius: number) => void; onViewChange?: (view: CameraView) => void }) {
   const viewer = useRef<ModelViewerElement | null>(null);
   const reportTimer = useRef<number | undefined>(undefined);
   const [progress, setProgress] = useState(0);
@@ -82,6 +82,8 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, referenc
       "max-camera-orbit": "auto 86deg 500%",
       "shadow-intensity": "0",
       exposure: staged ? "1.05" : "1.15",
+      "environment-image": staged && environmentUrl ? environmentUrl : undefined,
+      "skybox-image": staged && environmentUrl ? environmentUrl : undefined,
       loading: "eager",
       reveal: "auto",
     })}

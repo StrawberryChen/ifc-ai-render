@@ -61,6 +61,7 @@ def project_payload() -> dict[str, Any]:
         "source_model_url": "/api/project-files/models/source.glb",
         "staged_model_url": "/api/project-files/models/staged.glb",
         "render_preview_url": "/api/files/executor/sdcc.landscape_demo.preview.png",
+        "environment_url": "/api/asset-files/downloads/polyhaven/belfast_sunset_puresky/environment.hdr",
         "plan_url": "/api/plan",
         "planner_mode": "deepseek" if os.environ.get("SCENE_PLANNER_API_KEY", "").strip() else "local-rules",
     }
@@ -291,3 +292,12 @@ def desktop_project_file(path: str) -> FileResponse:
     if base not in target.parents or not target.is_file():
         raise HTTPException(404, "项目文件不存在")
     return FileResponse(target, headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/api/asset-files/{path:path}")
+def asset_file(path: str) -> FileResponse:
+    base = (ROOT / "assets").resolve()
+    target = (base / path).resolve()
+    if base not in target.parents or not target.is_file():
+        raise HTTPException(404, "资产文件不存在")
+    return FileResponse(target, headers={"Cache-Control": "public, max-age=86400"})

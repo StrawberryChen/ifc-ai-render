@@ -32,7 +32,9 @@
       "ui": {"group": "灯光", "label": "天空环境", "icon": "cloud"},
       "parameters": {
         "strength": {"type": "number", "minimum": 0, "maximum": 3, "default": 0.35, "ui": {"widget": "slider", "step": 0.05, "label": "环境亮度"}},
-        "sky_tint": {"type": "string", "enum": ["cool_blue", "neutral", "warm"], "default": "cool_blue", "ui": {"widget": "select", "label": "天空色调"}}
+        "sky_tint": {"type": "string", "enum": ["cool_blue", "neutral", "warm"], "default": "cool_blue", "ui": {"widget": "select", "label": "天空色调"}},
+        "environment_preset": {"type": "string", "default": "belfast_sunset_puresky", "ui": {"widget": "select", "label": "HDRI环境"}},
+        "rotation_deg": {"type": "number", "minimum": 0, "maximum": 360, "default": 235, "ui": {"widget": "slider", "step": 1, "label": "HDRI旋转"}}
       }
     },
     {

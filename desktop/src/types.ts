@@ -5,6 +5,7 @@ export type Project = {
   source_model_url: string;
   staged_model_url: string;
   render_preview_url: string;
+  environment_url?: string;
   planner_mode: "deepseek" | "local-rules";
 };
 

@@ -19,6 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from asset_library import AssetLibrary
 
 
+ROOT = Path(__file__).resolve().parents[1]
+LIGHTING_PRESETS_PATH = ROOT / "assets/presets/lighting_environments.json"
+
+
 def parse_args() -> argparse.Namespace:
     values = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     parser = argparse.ArgumentParser()
@@ -77,6 +81,28 @@ def configure_world(plan: dict[str, Any]) -> dict[str, Any]:
     nodes.clear()
     output = nodes.new("ShaderNodeOutputWorld")
     background = nodes.new("ShaderNodeBackground")
+    preset_id = lighting.get("preset", "neutral")
+    environment_presets = read_json(LIGHTING_PRESETS_PATH).get("presets", {}) if LIGHTING_PRESETS_PATH.is_file() else {}
+    environment = environment_presets.get(preset_id)
+    if environment:
+        image_path = ROOT / "assets" / environment["file"]
+        if image_path.is_file():
+            texture = nodes.new("ShaderNodeTexEnvironment")
+            texture.image = bpy.data.images.load(str(image_path), check_existing=True)
+            coordinates = nodes.new("ShaderNodeTexCoord")
+            mapping = nodes.new("ShaderNodeMapping")
+            rotation_deg = float(world_config.get("rotation_deg", environment.get("rotation_deg", 0)))
+            mapping.inputs["Rotation"].default_value[2] = math.radians(rotation_deg)
+            links.new(coordinates.outputs["Generated"], mapping.inputs["Vector"])
+            links.new(mapping.outputs["Vector"], texture.inputs["Vector"])
+            links.new(texture.outputs["Color"], background.inputs["Color"])
+            links.new(background.outputs["Background"], output.inputs["Surface"])
+            background.inputs["Strength"].default_value = max(0.01, float(world_config.get("strength", environment.get("strength", 0.32))))
+            return {
+                "action": "configure_world", "status": "executed", "sky": "hdri",
+                "asset_id": environment["asset_id"], "rotation_deg": rotation_deg,
+                "path": str(image_path),
+            }
     sky = nodes.new("ShaderNodeTexSky")
     tint_mix = nodes.new("ShaderNodeMixRGB")
     try:
@@ -102,7 +128,7 @@ def configure_world(plan: dict[str, Any]) -> dict[str, Any]:
     tint_mix.inputs[0].default_value = 0.42 if tint == "cool_blue" else 0.25
     tint_mix.inputs[2].default_value = colors.get(tint, colors["neutral"])
     background.inputs["Strength"].default_value = max(0.45, float(world_config.get("strength", 0.35)))
-    return {"action": "configure_world", "status": "executed", "tint": tint, "sky": "nishita"}
+    return {"action": "configure_world", "status": "executed", "tint": tint, "sky": "nishita", "fallback": True}
 
 
 def configure_sun(plan: dict[str, Any], collection: bpy.types.Collection) -> dict[str, Any]:

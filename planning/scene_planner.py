@@ -104,7 +104,7 @@ def build_template_plan(inventory: dict[str, Any], brief: dict[str, Any]) -> dic
         "lighting_plan": {
             "preset": style.get("time_of_day", "blue_hour"),
             "sun": {"elevation_deg": 8, "azimuth_deg": 235, "strength": 1.8, "temperature_k": 4300},
-            "world": {"strength": 0.35, "sky_tint": "cool_blue"},
+            "world": {"strength": 0.32, "sky_tint": "cool_blue", "environment_preset": "belfast_sunset_puresky", "rotation_deg": 235},
             "windows": {"enabled": True, "lit_ratio": 0.38, "temperature_k": 3200},
             "street_lights": {"enabled": True, "temperature_k": 3000, "spacing_m": 22},
             "constraint": "all visible shadows must follow one sun vector",

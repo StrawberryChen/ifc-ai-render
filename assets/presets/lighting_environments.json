@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "blue_hour": {
+      "asset_id": "ph_belfast_sunset_puresky",
+      "file": "downloads/polyhaven/belfast_sunset_puresky/environment.hdr",
+      "rotation_deg": 235,
+      "strength": 0.32,
+      "license_id": "POLY_HAVEN_CC0"
+    }
+  }
+}
