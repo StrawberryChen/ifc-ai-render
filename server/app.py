@@ -46,6 +46,13 @@ class PromptRequest(BaseModel):
     prompt: str = Field(min_length=2, max_length=2000)
 
 
+class CameraViewRequest(BaseModel):
+    azimuth_deg: float = Field(ge=0, le=360)
+    elevation_deg: float = Field(ge=8, le=80)
+    distance_multiplier: float = Field(ge=0.75, le=4)
+    focal_length_mm: float = Field(default=45, ge=18, le=120)
+
+
 def project_payload() -> dict[str, Any]:
     return {
         "id": PROJECT_ID,
@@ -213,6 +220,37 @@ def create_prompt_preview(request: PromptRequest, background_tasks: BackgroundTa
         "status": "rendering",
         "message": f"已生成 {len(actions)} 个受控动作，Blender 正在生成快速预览。",
     }
+
+
+@app.post("/api/camera/render")
+def render_camera_view(request: CameraViewRequest, background_tasks: BackgroundTasks) -> dict[str, Any]:
+    current = read_revisions()[0]
+    plan = current.get("plan", {})
+    shot_id = plan["camera_plan"]["shots"][0]["id"]
+    action = {
+        "tool_id": "camera.update_shot",
+        "parameters": {
+            "shot_id": shot_id,
+            "azimuth_deg": request.azimuth_deg,
+            "elevation_deg": request.elevation_deg,
+            "distance_multiplier": request.distance_multiplier,
+            "focal_length_mm": request.focal_length_mm,
+        },
+    }
+    schema = json.loads(TOOL_SCHEMA_PATH.read_text(encoding="utf-8"))
+    updated_plan = PlanEditor(schema).apply(plan, action["tool_id"], action["parameters"])
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    validate_plan(updated_plan, manifest)
+    revision = save_revision(
+        "三维视角渲染",
+        f"使用布景模型视角：方位 {request.azimuth_deg:.0f}°，俯角 {request.elevation_deg:.0f}°",
+        updated_plan,
+        status="rendering",
+        actions=[action],
+        planner="frontend-3d-camera",
+    )
+    background_tasks.add_task(run_blender_preview, revision)
+    return {"revision": revision, "status": "rendering", "message": "视角已写入场景计划，Blender 正在渲染。"}
 
 
 @app.post("/api/revisions/{revision_id}/restore")

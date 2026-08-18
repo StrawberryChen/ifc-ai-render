@@ -21,3 +21,10 @@ export type Revision = {
   staged_model_url?: string;
   error?: string;
 };
+
+export type CameraView = {
+  azimuth_deg: number;
+  elevation_deg: number;
+  distance_multiplier: number;
+  focal_length_mm: number;
+};

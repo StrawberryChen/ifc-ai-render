@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import { Box, ChevronRight, Clock3, History, Image, LoaderCircle, RotateCcw, Send, Sparkles, TriangleAlert } from "lucide-react";
+import { Box, Camera, ChevronRight, Clock3, History, Image, LoaderCircle, RotateCcw, Send, Sparkles, TriangleAlert } from "lucide-react";
 import ModelViewer from "./ModelViewer";
-import { API, getProject, getRevisions, restoreRevision, submitPrompt } from "./api";
-import type { Project, Revision } from "./types";
+import { API, getProject, getRevisions, renderCameraView, restoreRevision, submitPrompt } from "./api";
+import type { CameraView, Project, Revision } from "./types";
 
 const examples = [
   "改为初秋黄昏，天空偏蓝紫色，开启暖色建筑亮窗",
@@ -18,6 +18,7 @@ export default function App() {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [cameraView, setCameraView] = useState<CameraView | null>(null);
 
   const refresh = async () => {
     const [nextProject, nextRevisions] = await Promise.all([getProject(), getRevisions()]);
@@ -48,6 +49,16 @@ export default function App() {
     finally { setBusy(false); }
   };
 
+  const renderSelectedView = async () => {
+    if (!cameraView) return;
+    setBusy(true); setMessage("");
+    try {
+      const result = await renderCameraView(cameraView);
+      setMessage(result.message); setTab("render"); await refresh();
+    } catch (error) { setMessage(String(error)); }
+    finally { setBusy(false); }
+  };
+
   return <main>
     <header>
       <div className="brand"><span className="brand-mark"><Box size={19} /></span><div><strong>FormRender</strong><small>建筑可视化工作台</small></div></div>
@@ -63,11 +74,12 @@ export default function App() {
           <button className={tab === "render" ? "active" : ""} onClick={() => setTab("render")}><Image size={15} />渲染预览</button>
         </nav>
         <div className="viewport">
-          {project && tab !== "render" && <ModelViewer modelUrl={`${API}${tab === "source" ? project.source_model_url : project.staged_model_url}${tab === "staged" ? `?v=${stagedVersion}` : ""}`} staged={tab === "staged"} />}
+          {project && tab !== "render" && <ModelViewer modelUrl={`${API}${tab === "source" ? project.source_model_url : project.staged_model_url}${tab === "staged" ? `?v=${stagedVersion}` : ""}`} staged={tab === "staged"} onViewChange={tab === "staged" ? setCameraView : undefined} />}
           {project && tab === "render" && currentPreview && <div className="render-frame" style={{ "--preview-image": `url(${API}${currentPreview}?v=${stagedVersion})` } as CSSProperties}><img className="render-preview" src={`${API}${currentPreview}?v=${stagedVersion}`} alt="Blender render preview" /></div>}
           {!project && <div className="loading"><LoaderCircle className="spin" />连接本地项目…</div>}
           {currentRevision?.status === "rendering" && <div className="render-status"><LoaderCircle className="spin" size={18} /><div><strong>Blender 正在生成预览</strong><small>完成后会自动更新当前画面</small></div></div>}
           {currentRevision?.status === "failed" && <div className="render-status failed"><TriangleAlert size={18} /><div><strong>本次预览失败</strong><small>{currentRevision.error ?? "请检查 Blender 执行日志"}</small></div></div>}
+          {tab === "staged" && cameraView && <div className="camera-capture"><div><strong>当前三维视角</strong><small>方位 {cameraView.azimuth_deg.toFixed(0)}° · 俯角 {cameraView.elevation_deg.toFixed(0)}°</small></div><button onClick={renderSelectedView} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Camera size={15} />}设为渲染视角</button></div>}
           <div className="viewport-hint">拖动旋转 · 滚轮缩放 · 右键平移</div>
         </div>
       </div>

@@ -1,7 +1,8 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Grid, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import { Box3, Object3D, Vector3 } from "three";
-import { Component, Suspense, useEffect, useMemo } from "react";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef } from "react";
+import type { CameraView } from "./types";
 
 function SceneModel({ modelUrl }: { modelUrl: string }) {
   const gltf = useGLTF(modelUrl);
@@ -40,7 +41,25 @@ class ViewerErrorBoundary extends Component<{ children: React.ReactNode }, { err
   }
 }
 
-export default function ModelViewer({ modelUrl, staged }: { modelUrl: string; staged: boolean }) {
+function ViewControls({ onViewChange }: { onViewChange?: (view: CameraView) => void }) {
+  const controls = useRef<any>(null);
+  const { camera } = useThree();
+  const report = useCallback(() => {
+    const target = controls.current?.target ?? new Vector3(0, 1.4, 0);
+    const offset = camera.position.clone().sub(target);
+    const horizontal = Math.hypot(offset.x, offset.z);
+    onViewChange?.({
+      azimuth_deg: (Math.atan2(-offset.z, offset.x) * 180 / Math.PI + 360) % 360,
+      elevation_deg: Math.max(8, Math.min(80, Math.atan2(offset.y, horizontal) * 180 / Math.PI)),
+      distance_multiplier: Math.max(0.75, Math.min(4, offset.length() / 7)),
+      focal_length_mm: 45,
+    });
+  }, [camera, onViewChange]);
+  useEffect(() => { report(); }, [report]);
+  return <OrbitControls ref={controls} makeDefault target={[0, 1.4, 0]} minDistance={5.25} maxDistance={28} onEnd={report} />;
+}
+
+export default function ModelViewer({ modelUrl, staged, onViewChange }: { modelUrl: string; staged: boolean; onViewChange?: (view: CameraView) => void }) {
   return <div className="viewer-shell">
     <ViewerErrorBoundary>
       <Suspense fallback={<LoadingIndicator />}>
@@ -51,7 +70,7 @@ export default function ModelViewer({ modelUrl, staged }: { modelUrl: string; st
           <directionalLight position={[8, 12, 6]} intensity={staged ? 2.4 : 1.7} castShadow />
           <SceneModel modelUrl={modelUrl} />
           {!staged && <Grid position={[0, -0.01, 0]} args={[40, 40]} cellColor="#c7c2b8" sectionColor="#a8a196" fadeDistance={25} />}
-          <OrbitControls makeDefault target={[0, 1.4, 0]} minDistance={4} maxDistance={24} />
+          <ViewControls onViewChange={onViewChange} />
         </Canvas>
       </Suspense>
     </ViewerErrorBoundary>

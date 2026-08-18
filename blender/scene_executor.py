@@ -172,14 +172,18 @@ def configure_cameras(
             collection.objects.link(camera)
         camera_data.lens = float(shot.get("focal_length_mm", 45))
         shot_type = shot.get("type", "aerial_oblique")
-        azimuth = math.radians(directions[index % len(directions)])
+        azimuth = math.radians(float(shot.get("azimuth_deg", directions[index % len(directions)])))
         if shot_type == "eye_level":
             distance, height = radius * 1.25, max(1.7, minimum.z + size.z * 0.18)
             target = Vector((center.x, center.y, minimum.z + size.z * 0.35))
         else:
             coverage = min(0.9, max(0.35, float(shot.get("target_coverage", 0.72))))
             framing_scale = 0.72 / coverage
-            distance, height = radius * 1.35 * framing_scale, maximum.z + radius * 0.72 * framing_scale
+            distance_multiplier = min(4.0, max(0.75, float(shot.get("distance_multiplier", 1.35))))
+            elevation = math.radians(min(80.0, max(8.0, float(shot.get("elevation_deg", 34.0)))))
+            slant_distance = radius * distance_multiplier * framing_scale
+            distance = slant_distance * math.cos(elevation)
+            height = center.z + slant_distance * math.sin(elevation)
             target = center
         camera.location = Vector((
             center.x + math.cos(azimuth) * distance,
@@ -237,7 +241,16 @@ def configure_context_ground(
     context_blocks = []
     if not has_supplied_context:
         block_material = bpy.data.materials.get("AIR_ContextBlock_Material") or bpy.data.materials.new("AIR_ContextBlock_Material")
-        block_material.diffuse_color = (0.12, 0.15, 0.18, 1.0) if preset == "blue_hour" else (0.32, 0.33, 0.31, 1.0)
+        block_color = (0.075, 0.12, 0.18, 1.0) if preset == "blue_hour" else (0.24, 0.30, 0.32, 1.0)
+        block_material.diffuse_color = block_color
+        block_material.use_nodes = True
+        block_nodes = block_material.node_tree.nodes
+        block_principled = block_nodes.get("Principled BSDF") or block_nodes.new("ShaderNodeBsdfPrincipled")
+        block_output = block_nodes.get("Material Output") or block_nodes.new("ShaderNodeOutputMaterial")
+        if not block_principled.outputs["BSDF"].is_linked:
+            block_material.node_tree.links.new(block_principled.outputs["BSDF"], block_output.inputs["Surface"])
+        block_principled.inputs["Base Color"].default_value = block_color
+        block_principled.inputs["Roughness"].default_value = 0.88
         half_x, half_y = max(size.x * 0.5, radius * 0.18), max(size.y * 0.5, radius * 0.18)
         margin = radius * 0.42
         placements = [

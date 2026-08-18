@@ -1,4 +1,4 @@
-import type { Project, Revision } from "./types";
+import type { CameraView, Project, Revision } from "./types";
 
 export const API = "http://127.0.0.1:8765";
 
@@ -15,3 +15,7 @@ export const submitPrompt = (prompt: string) => request<{ revision: Revision; me
   { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) },
 );
 export const restoreRevision = (id: string) => request<Revision>(`/api/revisions/${id}/restore`, { method: "POST" });
+export const renderCameraView = (view: CameraView) => request<{ revision: Revision; message: string }>(
+  "/api/camera/render",
+  { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(view) },
+);
