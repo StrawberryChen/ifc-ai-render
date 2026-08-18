@@ -12,7 +12,7 @@
         "target_coverage": {"type": "number", "minimum": 0.3, "maximum": 0.95, "default": 0.72, "ui": {"widget": "slider", "step": 0.01, "label": "主体画面占比"}},
         "azimuth_deg": {"type": "number", "minimum": 0, "maximum": 360, "default": 225, "ui": {"widget": "slider", "step": 1, "label": "水平角度"}},
         "elevation_deg": {"type": "number", "minimum": 8, "maximum": 80, "default": 34, "ui": {"widget": "slider", "step": 1, "label": "俯视角度"}},
-        "distance_multiplier": {"type": "number", "minimum": 0.75, "maximum": 4, "default": 1.35, "ui": {"widget": "slider", "step": 0.05, "label": "相机距离"}}
+        "distance_multiplier": {"type": "number", "minimum": 0.25, "maximum": 4, "default": 1.35, "ui": {"widget": "slider", "step": 0.05, "label": "相机距离"}}
       }
     },
     {

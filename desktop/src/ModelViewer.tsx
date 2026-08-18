@@ -27,7 +27,7 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, onViewCh
         onViewChange?.({
           azimuth_deg: (90 - orbit.theta * 180 / Math.PI + 360) % 360,
           elevation_deg: Math.max(8, Math.min(80, 90 - orbit.phi * 180 / Math.PI)),
-          distance_multiplier: Math.max(0.75, Math.min(4, orbit.radius / maximum)),
+          distance_multiplier: Math.max(0.25, Math.min(4, orbit.radius / maximum)),
           focal_length_mm: 45,
         });
       }, 140);
@@ -59,9 +59,9 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, onViewCh
       alt: staged ? "Blender staged architectural model" : "Source architectural model",
       "camera-controls": true,
       "interaction-prompt": "none",
-      "camera-orbit": "35deg 67deg 115%",
-      "min-camera-orbit": "auto 10deg 70%",
-      "max-camera-orbit": "auto 82deg 400%",
+      "camera-orbit": staged ? "35deg 67deg 38%" : "35deg 67deg 85%",
+      "min-camera-orbit": "auto 8deg 5%",
+      "max-camera-orbit": "auto 86deg 500%",
       "shadow-intensity": "0",
       exposure: staged ? "1.05" : "1.15",
       loading: "eager",
