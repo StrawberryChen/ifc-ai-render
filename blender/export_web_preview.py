@@ -28,6 +28,8 @@ def main() -> int:
         export_cameras=True,
         export_lights=True,
         export_apply=True,
+        export_image_format="WEBP",
+        export_image_quality=72,
     )
     print(f"Web preview exported: {args.output}")
     return 0

@@ -1,81 +1,70 @@
-import { Canvas, useThree } from "@react-three/fiber";
-import { Grid, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
-import { Box3, Object3D, Vector3 } from "three";
-import { Component, Suspense, useCallback, useEffect, useMemo, useRef } from "react";
+import "@google/model-viewer";
+import type { ModelViewerElement } from "@google/model-viewer";
+import { createElement, useEffect, useRef, useState } from "react";
 import type { CameraView } from "./types";
 
-function SceneModel({ modelUrl }: { modelUrl: string }) {
-  const gltf = useGLTF(modelUrl);
-  const object = useMemo<Object3D>(() => gltf.scene.clone(true), [gltf.scene]);
-  useEffect(() => {
-    const contextObjects: Array<{ child: Object3D; parent: Object3D }> = [];
-    object.traverse((child) => {
-      if (child.name.startsWith("AIR_Context") && child.parent) {
-        contextObjects.push({ child, parent: child.parent });
-      }
-    });
-    contextObjects.forEach(({ child, parent }) => parent.remove(child));
-    const bounds = new Box3().setFromObject(object);
-    contextObjects.forEach(({ child, parent }) => parent.add(child));
-    const center = bounds.getCenter(new Vector3());
-    const size = bounds.getSize(new Vector3());
-    const scale = 7 / Math.max(size.x, size.y, size.z, 0.001);
-    object.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
-    object.scale.setScalar(scale);
-  }, [object]);
-  return <primitive object={object} />;
-}
-
 export function preloadModel(modelUrl: string) {
-  useGLTF.preload(modelUrl);
-}
-
-function LoadingIndicator() {
-  const { progress } = useProgress();
-  return <div className="viewer-state"><span className="viewer-loader" /><strong>正在载入三维场景 {Math.round(progress)}%</strong><small>读取 GLB 模型与嵌入贴图</small></div>;
-}
-
-class ViewerErrorBoundary extends Component<{ children: React.ReactNode }, { error: string }> {
-  state = { error: "" };
-  static getDerivedStateFromError(error: Error) { return { error: error.message }; }
-  render() {
-    if (this.state.error) return <div className="viewer-state error"><strong>三维模型载入失败</strong><small>{this.state.error}</small></div>;
-    return this.props.children;
-  }
-}
-
-function ViewControls({ onViewChange }: { onViewChange?: (view: CameraView) => void }) {
-  const controls = useRef<any>(null);
-  const { camera } = useThree();
-  const report = useCallback(() => {
-    const target = controls.current?.target ?? new Vector3(0, 1.4, 0);
-    const offset = camera.position.clone().sub(target);
-    const horizontal = Math.hypot(offset.x, offset.z);
-    onViewChange?.({
-      azimuth_deg: (Math.atan2(-offset.z, offset.x) * 180 / Math.PI + 360) % 360,
-      elevation_deg: Math.max(8, Math.min(80, Math.atan2(offset.y, horizontal) * 180 / Math.PI)),
-      distance_multiplier: Math.max(0.75, Math.min(4, offset.length() / 7)),
-      focal_length_mm: 45,
-    });
-  }, [camera, onViewChange]);
-  useEffect(() => { report(); }, [report]);
-  return <OrbitControls ref={controls} makeDefault target={[0, 1.4, 0]} minDistance={5.25} maxDistance={28} onEnd={report} />;
+  fetch(modelUrl, { cache: "force-cache" }).catch(() => undefined);
 }
 
 export default function ModelViewer({ modelUrl, staged, hidden = false, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; onViewChange?: (view: CameraView) => void }) {
-  return <div className="viewer-shell">
-    <ViewerErrorBoundary>
-      <Suspense fallback={<LoadingIndicator />}>
-        <Canvas className={hidden ? "viewer-canvas-hidden" : ""} camera={{ position: [8, 5.5, 9], fov: 42 }} dpr={[1, 1.25]} frameloop="demand" performance={{ min: 0.6 }}>
-          <color attach="background" args={[staged ? "#18201e" : "#e8e5de"]} />
-          <ambientLight intensity={staged ? 0.7 : 1.5} />
-          <hemisphereLight color="#dcecff" groundColor="#4b554c" intensity={staged ? 1.1 : 0.8} />
-          <directionalLight position={[8, 12, 6]} intensity={staged ? 2.4 : 1.7} />
-          <SceneModel modelUrl={modelUrl} />
-          {!staged && <Grid position={[0, -0.01, 0]} args={[40, 40]} cellColor="#c7c2b8" sectionColor="#a8a196" fadeDistance={25} />}
-          <ViewControls onViewChange={onViewChange} />
-        </Canvas>
-      </Suspense>
-    </ViewerErrorBoundary>
+  const viewer = useRef<ModelViewerElement | null>(null);
+  const reportTimer = useRef<number | undefined>(undefined);
+  const [progress, setProgress] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const element = viewer.current;
+    if (!element) return;
+    setLoaded(false); setProgress(0); setError("");
+    const report = () => {
+      window.clearTimeout(reportTimer.current);
+      reportTimer.current = window.setTimeout(() => {
+        const orbit = element.getCameraOrbit();
+        const dimensions = element.getDimensions();
+        const maximum = Math.max(dimensions.x, dimensions.y, dimensions.z, 0.001);
+        onViewChange?.({
+          azimuth_deg: (90 - orbit.theta * 180 / Math.PI + 360) % 360,
+          elevation_deg: Math.max(8, Math.min(80, 90 - orbit.phi * 180 / Math.PI)),
+          distance_multiplier: Math.max(0.75, Math.min(4, orbit.radius / maximum)),
+          focal_length_mm: 45,
+        });
+      }, 140);
+    };
+    const load = () => { setLoaded(true); setProgress(1); report(); };
+    const progressEvent = (event: Event) => setProgress((event as CustomEvent<{ totalProgress: number }>).detail.totalProgress);
+    const fail = () => setError("三维模型载入失败");
+    element.addEventListener("load", load);
+    element.addEventListener("progress", progressEvent);
+    element.addEventListener("camera-change", report);
+    element.addEventListener("error", fail);
+    if (element.loaded) load();
+    return () => {
+      window.clearTimeout(reportTimer.current);
+      element.removeEventListener("load", load);
+      element.removeEventListener("progress", progressEvent);
+      element.removeEventListener("camera-change", report);
+      element.removeEventListener("error", fail);
+    };
+  }, [modelUrl, onViewChange]);
+
+  return <div className={`viewer-shell ${hidden ? "viewer-shell-hidden" : ""}`}>
+    {createElement("model-viewer", {
+      ref: (node: ModelViewerElement | null) => { viewer.current = node; },
+      src: modelUrl,
+      alt: staged ? "Blender staged architectural model" : "Source architectural model",
+      "camera-controls": true,
+      "interaction-prompt": "none",
+      "camera-orbit": "35deg 67deg 115%",
+      "min-camera-orbit": "auto 10deg 70%",
+      "max-camera-orbit": "auto 82deg 400%",
+      "shadow-intensity": "0",
+      exposure: staged ? "1.05" : "1.15",
+      loading: "eager",
+      reveal: "auto",
+    })}
+    {!loaded && !error && <div className="viewer-state"><span className="viewer-loader" /><strong>正在载入三维场景 {Math.round(progress * 100)}%</strong><small>轻量 GLB 查看器</small></div>}
+    {error && <div className="viewer-state error"><strong>{error}</strong><small>请重新生成前端预览模型</small></div>}
   </div>;
 }
