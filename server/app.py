@@ -49,7 +49,7 @@ class PromptRequest(BaseModel):
 class CameraViewRequest(BaseModel):
     azimuth_deg: float = Field(ge=0, le=360)
     elevation_deg: float = Field(ge=8, le=80)
-    distance_multiplier: float = Field(ge=0.25, le=4)
+    distance_multiplier: float = Field(ge=0.25, le=12)
     focal_length_mm: float = Field(default=45, ge=18, le=120)
 
 

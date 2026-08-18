@@ -20,6 +20,7 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [cameraView, setCameraView] = useState<CameraView | null>(null);
   const [viewerTab, setViewerTab] = useState<"source" | "staged">("source");
+  const [sourceRadius, setSourceRadius] = useState<number>();
 
   const refresh = async () => {
     const [nextProject, nextRevisions] = await Promise.all([getProject(), getRevisions()]);
@@ -83,12 +84,12 @@ export default function App() {
           <button className={tab === "render" ? "active" : ""} onClick={() => setTab("render")}><Image size={15} />渲染预览</button>
         </nav>
         <div className="viewport">
-          {project && <ModelViewer hidden={tab === "render"} modelUrl={`${API}${viewerTab === "source" ? project.source_model_url : project.staged_model_url}${viewerTab === "staged" ? `?v=${stagedVersion}&viewer=3` : "?viewer=3"}`} staged={viewerTab === "staged"} onViewChange={viewerTab === "staged" ? setCameraView : undefined} />}
+          {project && <ModelViewer hidden={tab === "render"} modelUrl={`${API}${viewerTab === "source" ? project.source_model_url : project.staged_model_url}${viewerTab === "staged" ? `?v=${stagedVersion}&viewer=3` : "?viewer=3"}`} staged={viewerTab === "staged"} referenceRadius={viewerTab === "staged" ? sourceRadius : undefined} onReferenceRadius={viewerTab === "source" ? setSourceRadius : undefined} onViewChange={viewerTab === "staged" ? setCameraView : undefined} />}
           {project && tab === "render" && currentPreview && <div className="render-frame" style={{ "--preview-image": `url(${API}${currentPreview}?v=${stagedVersion})` } as CSSProperties}><img className="render-preview" src={`${API}${currentPreview}?v=${stagedVersion}`} alt="Blender render preview" /></div>}
           {!project && <div className="loading"><LoaderCircle className="spin" />连接本地项目…</div>}
           {currentRevision?.status === "rendering" && <div className="render-status"><LoaderCircle className="spin" size={18} /><div><strong>Blender 正在生成预览</strong><small>完成后会自动更新当前画面</small></div></div>}
           {currentRevision?.status === "failed" && <div className="render-status failed"><TriangleAlert size={18} /><div><strong>本次预览失败</strong><small>{currentRevision.error ?? "请检查 Blender 执行日志"}</small></div></div>}
-          {tab === "staged" && cameraView && <div className="camera-capture"><div><strong>当前三维视角</strong><small>方位 {cameraView.azimuth_deg.toFixed(0)}° · 俯角 {cameraView.elevation_deg.toFixed(0)}°</small></div><button onClick={renderSelectedView} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Camera size={15} />}设为渲染视角</button></div>}
+          {tab === "staged" && cameraView && <div className="camera-capture"><div><strong>当前三维视角</strong><small>方位 {cameraView.azimuth_deg.toFixed(0)}° · 俯角 {cameraView.elevation_deg.toFixed(0)}° · 距离 {cameraView.distance_multiplier.toFixed(2)}× · {cameraView.focal_length_mm.toFixed(0)}mm</small></div><button onClick={renderSelectedView} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Camera size={15} />}设为渲染视角</button></div>}
           <div className="viewport-hint">拖动旋转 · 滚轮缩放 · 右键平移</div>
         </div>
       </div>

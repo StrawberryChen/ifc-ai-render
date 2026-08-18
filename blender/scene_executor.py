@@ -179,7 +179,7 @@ def configure_cameras(
         else:
             coverage = min(0.9, max(0.35, float(shot.get("target_coverage", 0.72))))
             framing_scale = 0.72 / coverage
-            distance_multiplier = min(4.0, max(0.25, float(shot.get("distance_multiplier", 1.35))))
+            distance_multiplier = min(12.0, max(0.25, float(shot.get("distance_multiplier", 1.35))))
             elevation = math.radians(min(80.0, max(8.0, float(shot.get("elevation_deg", 34.0)))))
             slant_distance = radius * distance_multiplier * framing_scale
             distance = slant_distance * math.cos(elevation)

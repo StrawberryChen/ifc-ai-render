@@ -7,7 +7,7 @@ export function preloadModel(modelUrl: string) {
   fetch(modelUrl, { cache: "force-cache" }).catch(() => undefined);
 }
 
-export default function ModelViewer({ modelUrl, staged, hidden = false, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; onViewChange?: (view: CameraView) => void }) {
+export default function ModelViewer({ modelUrl, staged, hidden = false, referenceRadius, onReferenceRadius, onViewChange }: { modelUrl: string; staged: boolean; hidden?: boolean; referenceRadius?: number; onReferenceRadius?: (radius: number) => void; onViewChange?: (view: CameraView) => void }) {
   const viewer = useRef<ModelViewerElement | null>(null);
   const reportTimer = useRef<number | undefined>(undefined);
   const [progress, setProgress] = useState(0);
@@ -23,12 +23,17 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, onViewCh
       reportTimer.current = window.setTimeout(() => {
         const orbit = element.getCameraOrbit();
         const dimensions = element.getDimensions();
-        const maximum = Math.max(dimensions.x, dimensions.y, dimensions.z, 0.001);
+        const designRadius = Math.max(dimensions.x, dimensions.z, dimensions.y * 2, 0.001);
+        if (!staged) onReferenceRadius?.(designRadius);
+        const distanceBasis = referenceRadius ?? designRadius;
+        const verticalFov = element.getFieldOfView() * Math.PI / 180;
+        const aspect = Math.max(element.clientWidth / Math.max(element.clientHeight, 1), 0.1);
+        const focalLength = 36 / (2 * Math.tan(verticalFov / 2) * aspect);
         onViewChange?.({
           azimuth_deg: (90 - orbit.theta * 180 / Math.PI + 360) % 360,
           elevation_deg: Math.max(8, Math.min(80, 90 - orbit.phi * 180 / Math.PI)),
-          distance_multiplier: Math.max(0.25, Math.min(4, orbit.radius / maximum)),
-          focal_length_mm: 45,
+          distance_multiplier: Math.max(0.25, Math.min(12, orbit.radius / distanceBasis)),
+          focal_length_mm: Math.max(18, Math.min(120, focalLength)),
         });
       }, 140);
     };
@@ -49,7 +54,7 @@ export default function ModelViewer({ modelUrl, staged, hidden = false, onViewCh
       element.removeEventListener("camera-change", report);
       element.removeEventListener("error", fail);
     };
-  }, [modelUrl, onViewChange]);
+  }, [modelUrl, staged, referenceRadius, onReferenceRadius, onViewChange]);
 
   return <div className={`viewer-shell ${hidden ? "viewer-shell-hidden" : ""}`}>
     {createElement("model-viewer", {
